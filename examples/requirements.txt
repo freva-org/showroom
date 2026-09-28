@@ -1,0 +1,9 @@
+# What the examples need, and nothing else. Unpinned: the examples track the
+# latest releases.
+xarray
+zarr
+s3fs          # the S3 filesystem behind the s3:// URLs
+numpy
+matplotlib
+cartopy       # coastlines
+healpix-geo   # nested indexing, coordinates, box and cone coverage

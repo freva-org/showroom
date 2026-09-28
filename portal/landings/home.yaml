@@ -1,0 +1,103 @@
+schemaVersion: 1
+title: Waterpark
+description: The HEALPix data hub on S3 - reanalyses, climate model output, campaign data and satellite products on one equal-area grid, ready to read from anywhere.
+blocks:
+  - type: hero
+    heading: Every dataset on one grid. Read only what you need.
+    summary: >-
+      Reanalyses, climate model output, campaign data and satellite products,
+      remapped once onto the same equal-area HEALPix grid and served as
+      multi-resolution Zarr pyramids over S3. Nothing to download and nothing
+      to regrid: explore at a coarse level, analyse at a fine one, and compare
+      datasets cell by cell.
+    actions:
+      - label: Find data
+        component: data
+      - label: Browse as STAC
+        component: catalog
+      - label: Learn by example
+        href: /docs/examples/
+
+  - type: dataset-tree
+    s3:
+      endpoint: https://s3.waterpark.dkrz.de
+      style: path
+      roots:
+      - name: CMIP6
+        bucket: cmip6
+        description: Coupled Model Intercomparison Project Phase 6
+        link: { href: https://wcrp-cmip.org/cmip-phase-6-cmip6 }
+      - name: CORDEX
+        bucket: cordex
+        description: Coordinated Regional Climate Downscaling Experiment
+        link: { href: https://cordex.org }
+      - name: DYAMOND
+        bucket: dyamond
+        description: Global storm-resolving intercomparison
+        link: { href: https://easy.gems.dkrz.de/DYAMOND/index.html }
+      - name: EERIE
+        bucket: eerie
+        description: Eddy-Rich Earth System Models
+        link: { href: https://dataviewer.eerie-project.eu/home/eddy-rich }
+      - name: ICDC
+        bucket: icdc
+        description: Integrated Climate Data Center
+        link: { href: https://www.cen.uni-hamburg.de/en/icdc }
+      - name: ICON-DREAM
+        bucket: icon-dream
+        description: DWD ICON Reanalysis
+        link: { href: https://opendata.dwd.de/climate_environment/CDC/help/landing_pages/doi_landingpage_ICON-DREAM_v1-en.html }
+      - name: nextGEMS
+        bucket: nextgems
+        description: next Generation Earth Modelling Systems
+        link: { href: https://nextgems-h2020.eu }
+      - name: Observations
+        bucket: obs
+        description: Various observational datasets, grid and swath products
+      - name: PalMod
+        bucket: palmod
+        description: Paleoclimate Modelling initiative
+      - name: Reanalysis
+        bucket: reanalysis
+        description: Reanalysis data for Ocean and Atmosphere
+        link: { href: https://www.ecmwf.int/en/forecasts/dataset/ecmwf-reanalysis-v5 }
+      - name: XSpies
+        bucket: xspies
+        description: km scale flagship ICON simulations
+        planned: coming soon
+    heading: Currently available datasets
+    summary: >-
+      Collections published on the hub. Expand a row for its endpoint, an
+      example read, and where the project is documented.
+
+    python:
+      enabled: true
+
+  - type: prose
+    heading: Where to start
+    source: ../../content/_fragments/start-cards.md
+
+
+  - type: prose
+    heading: Try it in your browser
+    source: ../../content/_fragments/playground.md
+
+  - type: prose
+    heading: What you can count on
+    source: ../../content/_fragments/count-on.md
+
+  - type: prose
+    heading: How it got this way
+    source: ../../content/_fragments/provenance.md
+
+  - type: callout
+    level: note
+    heading: Status
+    body: >-
+      A prototype. The interface is meant to stay stable, but data still comes
+      from DKRZ file systems through an S3-compatible gateway rather than
+      dedicated object storage.
+
+  - type: prose
+    heading: Who is behind it
+    source: ../../content/_fragments/partners.md

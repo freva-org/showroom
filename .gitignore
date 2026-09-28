@@ -1,0 +1,10 @@
+# build output and caches, all produced by scripts/dev-build.sh
+build/
+.freva-web-nextgen/
+.stac-materials/
+.python-materials/
+node_modules/
+__pycache__/
+.stac-upstream/
+portal/.portal.site-url.yaml
+.python-wheels/
