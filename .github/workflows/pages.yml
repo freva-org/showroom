@@ -1,0 +1,83 @@
+name: pages
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+  schedule:
+    - cron: "17 3 * * *"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pages-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+env:
+  NPM_CONFIG_AUDIT: "false"
+  NPM_CONFIG_FUND: "false"
+  PLAYWRIGHT_INSTALL_ARGS: "--with-deps"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    permissions:
+      contents: read
+      pages: read
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: lts/*
+
+      - uses: actions/cache@v6
+        with:
+          path: |
+            ~/.npm
+            ~/.cache/ms-playwright
+            .stac-materials
+            .python-materials
+          key: portal-${{ runner.os }}-${{ hashFiles('portal/portal.yaml') }}-${{ github.run_id }}
+          restore-keys: |
+            portal-${{ runner.os }}-${{ hashFiles('portal/portal.yaml') }}-
+            portal-${{ runner.os }}-
+
+      - id: pages
+        if: github.event_name != 'pull_request'
+        uses: actions/configure-pages@v6
+
+      - name: Build
+        env:
+          SITE_URL: ${{ steps.pages.outputs.base_url }}
+          GH_TOKEN: ${{ secrets.HEALPIX_GEO_TOKEN || github.token }}
+        run: ./scripts/dev-build.sh
+
+      - if: github.event_name != 'pull_request'
+        uses: actions/upload-pages-artifact@v5
+        with:
+          path: build/portal
+
+      - if: github.event_name == 'pull_request'
+        uses: actions/upload-artifact@v7
+        with:
+          name: waterpark-portal
+          path: build/portal
+          retention-days: 7
+
+  deploy:
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v5

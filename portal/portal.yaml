@@ -1,0 +1,297 @@
+schemaVersion: 1
+
+site:
+  id: waterpark
+  title: Waterpark
+  subtitle: The HEALPix data hub on S3
+  language: en
+  canonicalUrl: https://waterpark.dkrz.de/
+  identity:
+    logo: ../assets/waterpark-mark.svg
+    favicon: ../assets/waterpark-mark.svg
+
+chrome:
+  header:
+    enabled: true
+    search:
+      enabled: true
+      placeholder: Search Waterpark
+  footer:
+    enabled: true
+    bar:
+      lead: "Need support?"
+      links:
+        - label: waterpark@support.dkrz.de
+          href: mailto:waterpark@support.dkrz.de
+        - label: Subscribe to the newsletter
+          href: https://waterpark.dkrz.de/subscription/form
+    groups:
+      - title: Find data
+        links:
+          - label: Data Browser
+            component: data
+          - label: STAC Browser
+            component: catalog
+      - title: Learn
+        links:
+          - label: Examples
+            href: /docs/examples/
+          - label: High resolution data
+            href: /docs/working-with-data/
+          - label: Documentation overview
+            href: /docs/
+      - title: Concepts
+        links:
+          - label: HEALPix in Zarr on S3
+            href: /docs/storage-concepts/
+          - label: Why HEALPix?
+            href: /docs/storage-concepts/why-healpix/
+          - label: Why Zarr and S3?
+            href: /docs/storage-concepts/zarr-and-s3/
+          - label: Remapping decisions
+            href: /docs/technical-decisions/
+          - label: Remapping benchmark
+            href: /docs/remapping-benchmark/
+      - title: Operation
+        links:
+          - label: Operator Tools
+            href: /docs/tools/
+          - label: Support
+            href: mailto:waterpark@support.dkrz.de
+          - label: Newsletter
+            href: https://waterpark.dkrz.de/subscription/form
+      - title: Partners
+        links:
+          - label: DKRZ
+            href: https://www.dkrz.de
+          - label: Freva
+            href: https://www.freva.dkrz.de
+          - label: AWI
+            href: https://www.awi.de/en/
+          - label: Hereon
+            href: https://www.hereon.de/
+          - label: Universität Hamburg
+            href: https://www.uni-hamburg.de/en.html
+          - label: MPI-M
+            href: https://mpimet.mpg.de/en/homepage
+    prose: ../content/_fragments/footer-note.md
+    badge:
+      enabled: true
+      kind: freva
+      quality: standard
+
+theme:
+  preset: cosmos
+  backdrop:
+    tail: short
+  tokens:
+    colorAccent: "#00796b"
+    light:
+      colorBackground: "#ffffff"
+
+# The in-browser Python behind "Try in Python" on the landing page. 
+pythonPlayground:
+  enabled: true
+  profile: freva-client
+  # dask is required: the landing example opens a Zarr store with `chunks={}`.
+  addons:
+    - dask
+    - cartopy-natural-earth-110m
+  optionalAddons:
+    - cartopy-natural-earth-110m
+  network: https
+  autostart: never
+  editableSnippets: true
+  maxSessions: 2
+  # monkeypatch healpix-geo until they release
+  initialSource: |
+    import micropip
+    from js import location
+    from pyodide.http import pyfetch
+    _wheels = str(location.href).split("/_portal/")[0] + "/python-wheels/"
+    _names = await (await pyfetch(_wheels + "wheels.json")).json()
+    if _names:
+        await micropip.install([_wheels + _n for _n in _names], deps=False)
+    print("healpix-geo is installed" if _names else "healpix-geo: this build ships no wheel")
+    del micropip, location, pyfetch, _wheels, _names
+  connectOrigins:
+    - https://s3.waterpark.dkrz.de
+    - https://freva.dkrz.de
+  terminal:
+    style: freva-client-terminal
+    osControls: auto
+    alwaysOnTop: true
+    rememberAppearance: true
+
+rendering:
+  profile: portal-content-v1
+  sources:
+    - root: ../content
+      mount: /docs/
+      files:
+        include:
+          - "**/*.md"
+        exclude:
+          - "_fragments/**"
+  assets:
+    - root: ../assets
+      mount: /assets/
+  downloads:
+    - root: ../examples
+      mount: /downloads/examples/
+      files:
+        include: ["*.py", "requirements.txt"]
+    - root: ../.python-wheels
+      mount: /python-wheels/
+      files:
+        include: ["*.whl", "wheels.json"]
+  diagnostics:
+    warningsAsErrors: true
+
+landings:
+  home:
+    path: /
+    source: ./landings/home.yaml
+
+services:
+  dataApi:
+    kind: databrowser
+    baseUrl: https://freva.dkrz.de/api/freva-nextgen/databrowser
+    authentication: optional
+  stacApi:
+    kind: stac
+    catalogUrl: https://freva.dkrz.de/api/freva-nextgen/stacapi/product/?visible_collections=cmip6,dyamond,eerie,icdc,icon-dream,nextgems,obs,palmod,reanalysis-healpix
+
+components:
+  data:
+    kind: databrowser
+    enabled: true
+    service: dataApi
+    route: /databrowser/
+    title: Data Browser
+    description: Search the Waterpark catalogue.
+    options:
+      defaultFlavour: waterpark
+      fixedFacets:
+        project: waterpark
+      defaultLayout: overview
+      overview:
+        order:
+          - product
+          - variable
+          - time_frequency
+          - healpix_level
+          - experiment
+          - model
+          - realm
+          - ensemble
+          - time_aggregation
+          - __time
+          - __bbox
+        mainFacets:
+          - product
+          - variable
+          - time_frequency
+          - healpix_level
+          - experiment
+          - model
+          - realm
+          - ensemble
+          - time_aggregation
+          - __time
+          - __bbox
+  catalog:
+    kind: stac-browser
+    enabled: true
+    service: stacApi
+    route: /stac-browser/
+    title: STAC Browser
+    description: The same holdings, as STAC collections and items.
+    options:
+      chrome:
+        title: STAC Browser
+        image: ../assets/logo-512.png
+        footerLinks:
+          - label: Freva
+            href: https://www.freva.dkrz.de
+          - label: DKRZ
+            href: https://www.dkrz.de
+      access:
+        externalCatalogs: deny
+      rootPage:
+        intro: ../content/_fragments/catalog-intro.md
+        title: AI-/Analysis-Ready Cloud Optimized
+        description: >-
+          Analysis-ready, cloud optimized HEALPix Zarr pyramids served from S3.
+        keywords: [climate, FAIR, Freva, HEALPix, Zarr]
+        license: CC-BY-4.0
+        providers:
+          - name: Alfred Wegener Institute, Helmholtz Centre for Polar and Marine Research (AWI)
+            url: https://www.awi.de/en/
+            roles: [producer]
+            logo: ../assets/logos/awi.png
+          - name: Helmholtz-Zentrum Hereon
+            url: https://www.hereon.de/
+            roles: [producer]
+            logo: ../assets/logos/hereon.png
+          - name: Universität Hamburg
+            url: https://www.uni-hamburg.de/en.html
+            roles: [producer]
+            logo: ../assets/logos/uni-hamburg.png
+          - name: Max Planck Institute for Meteorology (MPI-M)
+            url: https://mpimet.mpg.de/en/homepage
+            roles: [producer]
+            logo: ../assets/logos/mpi-m.png
+          - name: Deutsches Klimarechenzentrum (DKRZ)
+            url: https://www.dkrz.de
+            roles: [host]
+            logo: ../assets/logos/dkrz.png
+      linkPolicy:
+        canonicalizeAdvertisedRoot: true
+        hiddenRelations:
+          - service-desc
+  login:
+    kind: auth
+    enabled: false
+
+
+navigation:
+  header:
+    - landing: home
+      label: Home
+    - component: data
+      label: Data Browser
+    - component: catalog
+      label: STAC Browser
+    - href: /docs/examples/
+      label: Examples
+    - href: /docs/working-with-data/
+      label: Tips and tricks
+    - href: /docs/storage-concepts/
+      label: Concepts
+    - href: /docs/tools/
+      label: Operation
+
+
+announcementFeed:
+  url: /api/announcements
+
+redirects:
+  - { from: /storage_concepts/, href: /docs/storage-concepts/ }
+  - { from: /storage_concepts/why-healpix/, href: /docs/storage-concepts/why-healpix/ }
+  - { from: /storage_concepts/zarr-and-s3/, href: /docs/storage-concepts/zarr-and-s3/ }
+  - { from: /storage_concepts/tiering/, href: /docs/tools/ }
+  - { from: /technical-decisions/, href: /docs/technical-decisions/ }
+  - { from: /appendix-remapping-benchmark/, href: /docs/remapping-benchmark/ }
+  - { from: /high-level-access/, href: /docs/working-with-data/ }
+  - { from: /reading-speed/, href: /docs/tools/ }
+  - { from: /tools/, href: /docs/tools/ }
+  - { from: /examples/, href: /docs/examples/ }
+  - { from: /examples/01_first_map/, href: /docs/examples/01_first_map/ }
+  - { from: /examples/02_global_mean/, href: /docs/examples/02_global_mean/ }
+  - { from: /examples/03_region_bbox/, href: /docs/examples/03_region_bbox/ }
+  - { from: /examples/04_zonal_mean/, href: /docs/examples/04_zonal_mean/ }
+  - { from: /examples/05_meridional_mean/, href: /docs/examples/05_meridional_mean/ }
+  - { from: /examples/06_hovmoeller/, href: /docs/examples/06_hovmoeller/ }
+  - { from: /examples/07_pyramid_levels/, href: /docs/examples/07_pyramid_levels/ }
+  - { from: /examples/08_cross_dataset/, href: /docs/examples/08_cross_dataset/ }

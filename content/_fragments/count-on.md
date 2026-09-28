@@ -1,0 +1,5 @@
+- **No regridding.** Everything is HEALPix, nested, on one sphere.
+- **Equal-area cells.** A global mean is `field.mean("cell")`, no `cos(lat)`.
+- **Read only what you need.** Zarr chunks over HTTP.
+- **A pyramid in space and time.** Coarse and monthly, or fine and hourly.
+- **No mounted filesystem.** The same URL from a laptop, Levante or a batch job.

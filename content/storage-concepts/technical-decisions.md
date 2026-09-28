@@ -1,0 +1,662 @@
+---
+title: Remapping decisions
+description: The design rationale behind the significant technical choices in Waterpark.
+path: /docs/technical-decisions/
+navOrder: 3
+---
+
+This document records the design rationale behind the significant
+technical choices in the remapping process that is applied to create all
+datasets[^1].  It is intended as a reference for
+contributors, reviewers, and downstream consumers of the produced
+HEALPix pyramids.
+
+---
+## Why HEALPix?
+
+HEALPix (Hierarchical Equal Area isoLatitude Pixelisation) tiles the
+sphere into pixels of exactly equal area at every resolution level.
+Originally developed for mapping the cosmic microwave background, it
+turns out to be exactly what analysis-ready climate data needs.
+
+## Area-weighted statistics are trivial
+
+Every pixel covers the same solid angle, so a global mean is just the
+arithmetic mean of all pixels. No latitude-dependent cosine weighting
+is needed, and an entire class of subtle statistics bugs, forgotten
+or misapplied area weights, simply cannot occur.
+
+![Equal area comparison](../../assets/healpix-equal-area.png#only-dark)
+![Equal area comparison](../../assets/healpix-equal-area-light.png#only-light)
+/// caption
+Cells coloured by their relative area. On a lat-lon grid (left), cell
+areas shrink with latitude; on a comparable 0.25° grid the largest
+cell is more than 400 times bigger than the smallest. On HEALPix
+(right), every cell is identical by construction.
+///
+
+## No singularities at the poles
+
+Regular lat-lon grids have converging meridians and vanishing cell
+areas at the poles, which force special-case handling in numerics,
+storage, and visualisation. HEALPix cells run right through the pole
+without anything special happening there.
+
+![Pole view](../../assets/healpix-pole.png#only-dark)
+![Pole view](../../assets/healpix-pole-light.png#only-light)
+/// caption
+Both grids viewed from directly above the North Pole (cross marks the
+pole). The lat-lon cells collapse into slivers at the centre; the
+HEALPix tessellation is unremarkable there, which is the point.
+///
+
+## Nested ordering
+
+HEALPix defines two pixel numbering schemes: **ring** ordering (pixels
+numbered along iso-latitude rings) and **nested** ordering (pixels
+numbered by a hierarchical quad-tree).  The remapping procedure[^1] defaults to nested ordering because it makes coarsening free.
+
+In nested ordering, a parent pixel at level $L$ with index $i$ has
+children $4i$, $4i+1$, $4i+2$, $4i+3$ at level $L+1$.  Coarsening
+the full grid therefore reduces to reshaping the data array from
+$(n_\text{cells},)$ to $(n_\text{cells} / 4,\; 4)$ and reducing along
+the last axis, requiring no index lookup, no scatter, and no sorting.
+
+![Nesting](../../assets/healpix-nesting.png#only-dark)
+![Nesting](../../assets/healpix-nesting-light.png#only-light)
+/// caption
+A real level 2 cell (parent 11, amber) with its four level 3 children
+(44 to 47, teal) and sixteen level 4 grandchildren (thin outlines).
+The indices are the actual nested indices: children of parent *p* are
+*4p* to *4p+3*.
+///
+
+
+HEALPix also supports ring ordering, but it does not have contiguous
+parent-child layout. Our remapping software[^1] supports it, but in
+that mode  every pyramid level is independently remapped from the
+source grid, which is substantially more expensive.
+
+
+## Spherical geometry
+
+All HEALPix cell boundaries and centre coordinates are computed on a
+**perfect sphere**, not on the WGS84 ellipsoid[^wgs84].  The remapping
+software we use,
+[ESMF](https://earthsystemmodeling.org/regrid/) (Earth System Modeling
+Framework, a widely used library for regridding Earth-system model
+output), computes conservative overlap areas exclusively on the sphere,
+with great-circle cell edges; it has no ellipsoidal geometry
+mode[^esmf].  The HEALPix target mesh, the source mesh, and the overlap
+calculation therefore all use one and the same geometry.
+
+**Plain-language summary.**  It is tempting to think that a spherical
+pipeline is "off by up to 21 km" compared to the real, slightly
+flattened Earth, and that switching the grid definition to the WGS84
+ellipsoid would fix this.  Neither is true.  As long as *every* step of
+the pipeline uses the same convention, the sphere approximation cancels
+out of the remapping almost entirely: the residual error is a few parts
+per million.  The 14 to 21 km error only becomes real when conventions
+are *mixed*, that is, when an ellipsoid-defined grid is fed into a
+sphere-based remapping tool (or vice versa).  Adopting ellipsoidal
+HEALPix today, while ESMF and the rest of the regridding ecosystem
+remain spherical, would create exactly that mixed state.  It would
+*introduce* a systematic geolocation error of up to about 14 km, many
+pixel widths at kilometre-scale resolution, into a change whose stated
+motivation is geolocation accuracy.  Consistency beats fidelity.
+
+### Why the sphere approximation cancels
+
+Everyone's data carries geodetic (WGS84) latitude $\varphi$.  Our
+pipeline interprets $\varphi$ directly as spherical latitude, a smooth
+and invertible convention applied identically to the source grid and
+the HEALPix target.  Because both grids are transformed the same way,
+their overlap topology in $(\lambda, \varphi)$ space is preserved
+exactly; a geodetic position round-trips to the same HEALPix cell
+without loss.
+
+The only distortion is the *area measure*.  On the sphere the area
+element is $dA_s = R^2 \cos\varphi \, d\varphi \, d\lambda$; on the
+ellipsoid it is $dA_e = M(\varphi) N(\varphi) \cos\varphi \, d\varphi
+\, d\lambda$, with the meridional and prime-vertical radii of
+curvature[^snyder]
+
+$$
+M(\varphi) = \frac{a (1 - e^2)}{(1 - e^2 \sin^2\varphi)^{3/2}},
+\qquad
+N(\varphi) = \frac{a}{(1 - e^2 \sin^2\varphi)^{1/2}},
+$$
+
+and WGS84 eccentricity $e^2 = f(2-f) \approx 0.006694$[^wgs84].  Write
+the distortion ratio $\rho(\varphi) = dA_e / dA_s$.  A first-order
+conservative remapping weight is a **ratio of areas**[^jones],
+
+
+$$
+w_{ij} \;=\; \frac{A(S_i \cap T_j)}{A(T_j)},
+$$
+
+
+where $S_i$ is cell $i$ of the source grid (for example an ICON
+triangle or a satellite pixel footprint), $T_j$ is target HEALPix cell
+$j$, and $A(\cdot)$ denotes area.  The weight $w_{ij}$ is the fraction
+of the target cell covered by that source cell, and the remapped field
+is the weighted average $\tilde f_j = \sum_i w_{ij} f_i$.  Numerator
+and denominator sample $\rho$ at the *same latitude*, so the distortion
+cancels to first order:
+
+
+$$
+w_{ij}^{\mathrm{sphere}}
+= \frac{\displaystyle\int_{S_i \cap T_j} \rho^{-1}\, dA_e}
+       {\displaystyle\int_{T_j} \rho^{-1}\, dA_e}
+= w_{ij}^{\mathrm{ellipsoid}}
+  \left( 1 + \mathcal{O}\!\left(\tfrac{\rho'}{\rho}\,
+  \Delta\varphi_{\mathrm{cell}} \right) \right).
+$$
+
+The residual scales with the *variation* of $\rho$ across a single
+cell, $\rho'/\rho \sim 2 e^2 \sin 2\varphi \approx 0.013$ per radian.
+For a level-10 HEALPix cell ($\Delta\varphi_{\mathrm{cell}} \approx 5.4
+\times 10^{-4}$ rad) the relative weight error is
+
+$$
+\varepsilon_{\mathrm{consistent}}
+\;\sim\; 2 e^2 \, \Delta\varphi_{\mathrm{cell}}
+\;\approx\; 7 \times 10^{-6},
+$$
+
+and it *shrinks* with increasing resolution.  What does not cancel is
+the absolute area of a cell: integrating with spherical cell areas over
+ellipsoidal data carries a smooth latitude-dependent bias
+$\rho(\varphi) - 1$ of roughly $-0.4\,\%$ at the equator to $+0.9\,\%$
+at the poles.  This affects diagnostics, not remapping, and is fully
+correctable in post-processing by integrating with true ellipsoidal
+cell areas.
+
+### Why mixing conventions does not cancel
+
+An ellipsoidal HEALPix grid keeps its cells equal-area on the ellipsoid
+by defining cell boundaries through an auxiliary latitude[^snyder].
+Suitable choices are the authalic latitude $\xi$ (the construction used
+by the rHEALPix DGGS on the ellipsoid[^gibb] and by healpix-geo's WGS84
+support[^hpgeo]) or, for pure geolocation, the geocentric latitude
+$\psi$:
+
+$$
+\varphi - \xi \approx \tfrac{e^2}{3} \sin 2\varphi
+\quad (\text{max } 7.7' \approx 14\ \mathrm{km}),
+\qquad
+\varphi - \psi \approx \tfrac{e^2}{2} \sin 2\varphi
+\quad (\text{max } 11.5' \approx 21\ \mathrm{km}),
+$$
+
+both maximal at $\varphi = 45°$.  Feed such a grid into a spherical
+remapper together with a source grid whose coordinates are plain
+geodetic latitudes, and the two grids are now expressed in *different*
+latitude conventions: the target is displaced relative to the source by
+$\delta\varphi(\varphi)$.  Conservative overlaps are then computed
+between systematically misregistered polygons, and the remapped field
+is, to first order, the true field evaluated at a shifted position:
+
+$$
+\tilde f(\mathbf{x}) \;\approx\; f(\mathbf{x} + \boldsymbol{\delta}),
+\qquad |\boldsymbol{\delta}| \lesssim 14\text{ to }21\ \mathrm{km}.
+$$
+
+Unlike the consistent case, this error is **first order** in $e^2$ and
+is a *displacement*, the worst kind of error for high-resolution data:
+HEALPix cells measure roughly 6.4 km at level 10, 1.6 km at level 12,
+and 0.8 km at level 13, so the misregistration amounts to **10 to 20
+cell widths** at kilometre scale.  Every front, coastline, and swath
+edge lands in the wrong cells.  Comparing the two regimes at level 12:
+
+$$
+\frac{\varepsilon_{\mathrm{mixed}}}{\varepsilon_{\mathrm{consistent}}}
+\;\sim\;
+\frac{e^2/3}{2 e^2 \, \Delta\varphi_{\mathrm{cell}}}
+\;=\;
+\frac{1}{6\,\Delta\varphi_{\mathrm{cell}}}
+\;\approx\; 10^3 .
+$$
+
+Switching the grid definition without switching the remapping stack
+makes the error roughly **three orders of magnitude larger** than
+staying consistently spherical.
+
+### Migration path
+
+Ellipsoidal HEALPix is not wrong, it is premature.  The correct
+construction defines the grid through the authalic latitude, following
+the rHEALPix ellipsoidal DGGS[^gibb] and healpix-geo[^hpgeo].  Because
+the authalic mapping is equal-area by construction[^snyder], a
+spherical conservative remapping performed in authalic coordinates is
+*exactly* area-preserving on the ellipsoid; the only residual is the
+difference between great-circle edges and images of ellipsoidal
+geodesics, which is $\mathcal{O}(e^4)$.  A correct ellipsoidal pipeline
+therefore requires the transform $\varphi \to \xi(\varphi)$ to be
+applied to the source mesh before weight generation, either inside the
+remapping tool (an ellipsoid-aware ESMF or equivalent) or consistently
+in every tool that touches the data, including downstream cell lookups.
+
+A half-migrated ecosystem is strictly worse than either pure
+convention.  Our commitment is therefore:
+
+1. **Today**: all geometry (HEALPix boundaries[^gorski], source
+   meshes, ESMF overlap calculation) stays on the perfect sphere,
+   with geodetic latitude interpreted as spherical latitude end to end.
+2. **When** an ellipsoid-aware conservative remapping tool is available
+   and validated (a new ESMF version or an equivalent that applies the
+   authalic transform internally), we switch the pipeline **and remap
+   all published datasets** in one coordinated step, so that no dataset
+   ever mixes conventions with another.
+
+
+## Target level selection
+
+The target HEALPix level for each source dataset is chosen as the
+highest level whose characteristic pixel spacing is coarser than or
+comparable to the source resolution.  The heuristic is:
+
+$$
+\ell = \left\lfloor \log_2 \frac{58.6°}{\Delta} \right\rfloor
+$$
+
+where $\Delta$ is the estimated source grid spacing in degrees.  The
+constant 58.6° is the approximate pixel spacing at level 0,
+derived from $360° \;/\; \sqrt{12 \times 4^0}$.
+
+This ensures that the HEALPix grid does not oversample the source.
+Lower pyramid levels are derived by coarsening, not by remapping, so
+no additional information is fabricated.
+
+| Level | nside | Pixels       | Approx. spacing |
+|------:|------:|-------------:|:---------------:|
+|     0 |     1 |           12 | 58.6°           |
+|     3 |     8 |          768 | 7.3°            |
+|     5 |    32 |       12 288 | 1.8°            |
+|     7 |   128 |      196 608 | 27.5′           |
+|     9 |   512 |    3 145 728 | 6.9′            |
+|    10 |  1024 |   12 582 912 | 3.4′            |
+
+
+## Remapping methods
+
+Remapping is performed by ESMF, which computes the geometric overlap
+between source and target cells and produces a sparse weight matrix
+that is applied to the data.  The remapping software supports two remapping
+methods, chosen by variable type.
+
+### Conservative remapping (continuous fields)
+
+Used for temperature, precipitation, radiation, wind, and all other
+fields that represent continuous physical quantities.
+
+Conservative remapping computes area-weighted averages: each weight is
+proportional to the fractional overlap area between a source cell and a
+target cell.  The key property is **integral preservation**, the
+area-integral of the field over any target cell equals the sum of the
+area-integrals of the contributing source cells.
+
+This is the only method that correctly handles sub-pixel variability.
+If a HEALPix cell straddles a strong SST gradient, the conservative
+average reflects the true area-weighted mean rather than the value at a
+single sampled point.
+
+### Nearest-neighbour remapping (categorical fields)
+
+Used for land-sea masks, land cover classes, soil type, and all other
+fields where values are discrete labels.
+
+Nearest-neighbour assigns each target cell the value of the closest
+source cell centre.  This guarantees that the output contains only
+values that actually exist in the source, no interpolated intermediate
+classes like "land-use 3.7" can appear.
+
+Linear or bilinear interpolation is explicitly **not** supported.  While
+it can produce smoother-looking fields, it fabricates values that were
+not present in the original data.
+
+
+## Weight generation
+
+Remapping weights are precomputed and stored as reusable NetCDF files.
+Weight generation is the most expensive step in the pipeline, but it
+only needs to happen once per combination of source grid and target
+HEALPix level.  Subsequent runs reuse the cached weight file.
+
+For moderate grids, weights are generated in memory using ESMF's Python
+bindings (ESMPy).  For very large grids where this would exceed
+available RAM, grid-doctor[^1] writes both meshes to temporary files and
+invokes the standalone `ESMF_RegridWeightGen` command under MPI, with a
+configurable number of ranks.
+
+Grid-doctor[^1] automatically classifies the source grid and constructs the
+appropriate mesh representation:
+
+| Source type     | Examples                    | Detection |
+|:----------------|:----------------------------|:----------|
+| Regular         | ERA5, CMIP on lat-lon grids | 1-D `lat` and `lon` coordinates |
+| Curvilinear     | NEMO, WRF                   | 2-D `lat(y, x)` and `lon(y, x)` |
+| Unstructured    | ICON, MPAS                  | Dimension named `cell` / `ncells`, or `CDI_grid_type` attribute |
+
+Every weight file is annotated with provenance metadata
+(`grid_doctor_method`, `grid_doctor_level`, `grid_doctor_order`, source
+grid details) so that downstream tools can verify how the weights were
+produced.
+
+
+## Weight application
+
+Applying the weight matrix to data is a sparse matrix multiplication.
+The full batch of time steps is reshaped into a single dense matrix and
+multiplied in one operation, which is typically 10–50× faster than
+applying the weights one time step at a time.  GPU acceleration (via
+CuPy) and JIT compilation (via Numba) are used automatically when those
+packages are installed.  See
+[Performance: application backends](#performance-application-backends)
+for details.
+
+
+## Missing-value handling during remapping
+
+Source datasets commonly contain NaN values, for instance land pixels in
+an ocean dataset, gaps in satellite swaths, or masked regions.  The
+`missing_policy` parameter controls how these are treated during weight
+application.
+
+### Renormalize (default)
+
+Source cells that are NaN are excluded from the weighted sum.  The
+weights of the remaining valid source cells are rescaled so they sum
+to 1.  A target cell receives a valid value as long as at least one
+contributing source cell is valid.
+
+This is the appropriate choice for virtually all climate fields.  A
+HEALPix cell on a coastline that partly overlaps land (NaN) and partly
+ocean still receives a valid SST from the ocean fraction.
+
+### Propagate
+
+If any contributing source cell is NaN, the target cell is set to NaN.
+No partial averages are computed.
+
+This mode exists for strict budget-closure applications.  If you are
+integrating total precipitation over a HEALPix cell and one source cell
+is missing, the renormalized average looks valid but represents a biased
+estimate over a subset of the area.  For budget-closure studies it is
+preferable to have a NaN than a plausible-looking number derived from
+incomplete coverage.
+
+Note that this mode is very aggressive: a single NaN source cell at the
+edge of a target cell's footprint is enough to discard it.  Along
+coastlines, swath edges, and orbit gaps, large portions of the output
+will be NaN.
+
+
+## Point binning (swath and station data)
+
+Gridded datasets are remapped with ESMF as described above.  *Point-sampled*
+data — satellite Level-2 swaths, station records, trajectories — cannot use
+that path for two structural reasons: every granule has unique geometry, so
+the precomputed weight matrix can never be reused, and ESMF's
+nearest source-to-destination method assigns a value to **every**
+destination cell, which would smear a narrow swath over the entire globe.
+
+Point data is therefore **binned**: each sample is assigned to the HEALPix
+cell containing its coordinates and all samples per cell are reduced.  The
+available reductions mirror the two remapping methods:
+
+- **Mean binning (continuous fields).**  In the oversampled limit — sample
+  spacing much finer than the target cell spacing — the per-cell sample
+  mean converges to the area-weighted mean, making it a first-order
+  approximation of conservative remapping.  This validity condition is
+  enforced by choosing the target level from the sample spacing with the
+  same heuristic used for gridded data; a swath is never binned into cells
+  finer than its own pixel spacing.
+- **Mode binning (categorical fields).**  The most frequent class per cell,
+  the binning analogue of nearest-neighbour remapping.  Ties are broken
+  deterministically towards the lowest class value.  As with
+  nearest-neighbour remapping, no interpolated intermediate classes can
+  appear.
+- ``min`` / ``max`` / ``count`` are available for extrema and coverage
+  diagnostics.
+
+A per-sample **sum is deliberately not offered**: it scales with sample
+density (orbit overlap, across-track pixel count) rather than any physical
+integral, and therefore violates the integral-preservation rationale that
+motivates conservative remapping.  Root-mean-square reductions are likewise
+excluded because they do not commute with mean coarsening in the pyramid;
+if an RMS quantity is required, bin the *squared* field with the mean and
+apply the square root at read time.
+
+### Sphere, not ellipsoid — also for satellite data
+
+Satellite geolocation is geodetic (WGS84).  Binning nevertheless indexes
+cells on the **perfect sphere**, exactly like all remapped datasets.  The
+geodetic-vs-spherical latitude discrepancy (up to ~0.19° at 45° latitude,
+~21 km) is accepted so that every dataset in the hub shares a single
+indexing geometry.  Indexing one dataset on the ellipsoid while all others
+use the sphere would shift it by dozens of pixels at typical swath target
+levels, producing visible misregistration (offset coastlines) when
+datasets are overlaid.
+
+### Minimum sample count and coverage tracking
+
+A cell is set to NaN when it receives fewer than ``min_count`` valid
+samples (default: 1).  Optionally, a companion ``<variable>_count``
+variable records the number of valid samples per cell.  Publishing the
+count is recommended: it makes coverage auditable, enables unbiased
+count-weighted merging of overlapping granules, and is the point-data
+analogue of a valid-area fraction for coarsened grids.
+
+### Pyramids from binned data
+
+Binned datasets carry the full standard metadata (``crs`` variable,
+``healpix_*`` and ``grid_doctor_*`` attributes) and dense cell layout, so
+pyramid construction reuses the ordinary coarsening machinery unchanged,
+including the 50% minimum-valid-fraction rule.  The recorded method
+(``grid_doctor_method = "binned-mean"`` or ``"binned-mode"``) drives the
+automatic mean-vs-mode coarsening selection, just as ``"conservative"``
+and ``"nearest"`` do for remapped data.
+
+
+## Pyramid construction and coarsening
+
+The multi-resolution pyramid is built by first remapping the source
+dataset to the finest HEALPix level, then deriving all coarser levels
+by iterated coarsening, one level at a time, always a factor of 4.
+
+### Why coarsen rather than remap at each level?
+
+Remapping from the original source grid at every level would be correct
+but wasteful: each level would require a separate weight file, and
+weight generation cost scales with the product of source and target
+cell counts.  Coarsening is essentially free, a reshape plus a
+vectorised reduction, and produces identical results for nested
+HEALPix grids because the nested pixel hierarchy exactly matches the
+coarsening hierarchy.
+
+### Mean coarsening (continuous fields)
+
+For continuous fields (those remapped with conservative weights), each
+parent cell's value is the NaN-aware mean of its 4 children.
+
+### Mode coarsening (categorical fields)
+
+For categorical fields (those remapped with nearest-neighbour weights),
+averaging class labels is meaningless.  Instead, each parent cell
+receives the **mode** (most frequent value) of its valid children.
+Ties are broken by the first occurrence.
+
+The coarsening mode is inferred automatically from the remapping method
+stored in the dataset attributes: `grid_doctor_method = "nearest"`
+triggers mode coarsening, `"conservative"` triggers mean coarsening.
+An explicit `coarsen_mode` parameter is available to override this.
+
+### Minimum valid fraction (default: 50%)
+
+A parent cell is set to NaN when fewer than half of its children are
+valid (at least 2 of 4).
+
+**Representativeness.**  A parent cell's value should represent the
+majority of its area.  With at least 2 of 4 valid children, the value
+is guaranteed to cover at least half the parent cell's area.  Below
+that, a single child pixel's value would "speak for" 3 other pixels
+that have no data, which is indistinguishable from interpolation into
+unknown territory.
+
+**Cascade prevention.**  Each coarsening step is a factor-of-4
+reduction.  If only 1 of 4 valid children were sufficient, a single
+valid pixel at the finest level could survive every coarsening step:
+1/4 at level $N-1$, that surviving parent is again 1/4 at level $N-2$,
+and so on.  After $k$ steps it represents a fraction of $4^{-k}$ of the
+area it claims to cover.  This is the "Siberian lake problem" observed
+with MODIS SST: a single lake pixel at level 10 bled through 7
+coarsening steps to level 3, covering a 16 384× larger area.  With a
+50% threshold, the cascade is impossible, the pixel is discarded at
+the very first step because 1/4 < 1/2.  A feature can only survive
+coarsening if it covers at least half the area at every scale, which is
+exactly when it is a real, resolvable feature at that resolution.
+
+
+## Output metadata and CRS convention
+
+Every output dataset carries a standardised set of metadata.
+
+### Global attributes
+
+| Attribute                          | Description |
+|:-----------------------------------|:------------|
+| `healpix_level`                    | HEALPix refinement level |
+| `healpix_nside`                    | $2^\ell$ |
+| `healpix_order`                    | `nested` or `ring` |
+| `grid_doctor_version`              | Package version that produced the data |
+| `grid_doctor_method`               | `conservative` or `nearest` |
+| `grid_doctor_coarsened_from_level` | Immediate parent level (coarsened levels only) |
+
+### CRS variable
+
+A scalar coordinate variable named `crs` follows the CF `grid_mapping`
+convention.  It carries attributes that describe the coordinate
+reference system:
+
+```
+crs: float64
+    grid_mapping_name: healpix
+    healpix_nside: 1024
+    healpix_level: 10
+    healpix_order: nested
+```
+
+Every spatially-dimensioned data variable carries
+`grid_mapping = "crs"` so that CF-aware tools can discover the
+projection automatically.  This convention is validated against the
+[gridlook](https://gridlook.pages.dev/) viewer, which uses
+`grid_mapping_name == "healpix"` to detect and render HEALPix datasets.
+
+
+## Storage format
+
+Pyramids are written as Zarr v2 stores with consolidated metadata, one
+store per level (`level_0.zarr`, `level_1.zarr`, …).  Zarr v2 is used
+because ecosystem support for v3 is still maturing: client libraries
+such as `zarr-python`, `zarr-js` (used by gridlook and similar web
+viewers), `xarray`, and `zarrita` have stable, well-tested v2
+implementations, while v3 support varies in completeness.  The
+transition to v3 is planned once the client ecosystem has converged.
+
+Zarr's chunked, cloud-native layout enables byte-range reads from S3
+without downloading entire files, which is essential for interactive
+visualisation where only a single chunk of a single variable at a single
+level needs to be fetched.
+
+
+
+## High-level regional datasets: implicit coordinates
+
+Small-area datasets at very high levels (16 and beyond) keep the dense
+global convention — cell position equals cell index — but stop
+materialising what the index already implies.  Above level
+10 (`WRITE_COORDS_MAX_LEVEL`), stores are written **without**
+`cell`/`latitude`/`longitude` coordinate arrays: at level 16 those two
+float64 arrays would cost ~800 GB while the regional payload is
+megabytes, and unlike the data variables they are never fill values, so
+empty-chunk elision cannot help.  Such stores carry
+`grid_doctor_implicit_coords = 1`, retain the `crs` variable and all
+`healpix_*` attributes, and remain byte-identical in layout to an
+ordinary dense store.
+
+Access is region-driven through range selection.  Nested ordering
+guarantees that every coarse-level parent corresponds to one contiguous
+fine-level index range, so a bounding-box query decomposes into a
+handful of contiguous reads that align one-to-one with power-of-four
+chunks.  Coordinates are reconstructed on the fly for exactly the cells
+returned.  Combined with `fill_value = NaN` and empty-chunk elision on
+the data variables, storage and access cost are proportional to the
+domain, not the globe, while cross-dataset and cross-level alignment
+stay a bit-shift (`parent = id >> 2k`) exactly as for every other
+dataset in the hub.
+
+Levels at or below the threshold within the same pyramid are written
+with materialised coordinates as usual, so coarse overview levels stay
+directly consumable by CF-aware viewers.
+
+
+---
+
+## Performance: application backends
+
+The sparse weight-matrix multiplication supports three backends,
+selected automatically based on what is installed.
+
+**Batched SciPy** (always available) reshapes all time steps into a
+single dense matrix and performs one sparse matmul, delegating to BLAS
+for the dense side.  This is typically 10–50× faster than per-slice
+application.
+
+**Numba** (optional) JIT-compiles a fused kernel that computes the
+weighted sum, NaN mask, and renormalization in a single pass over the
+sparse matrix structure.  This halves memory traffic for single-slice
+workloads.
+
+**CuPy** (optional) transfers the weight matrix to the GPU once and
+applies it via cuSPARSE.  This is worthwhile for large target grids
+(HEALPix level 10+) with many time steps, where the transfer cost is
+amortised over the batch.
+
+The backend can be overridden explicitly via `backend="scipy"`,
+`"numba"`, or `"cupy"` in any remapping call.
+
+
+---
+
+## References
+
+[^1]: Remapping is realised with a uniform remapping software
+    [grid-doctor](https://freva-org.github.io/grid-doctor)
+[^gorski]: Górski, K. M., et al. (2005). *HEALPix: A Framework for
+    High-Resolution Discretization and Fast Analysis of Data
+    Distributed on the Sphere*. The Astrophysical Journal, 622(2),
+    759–771. <https://doi.org/10.1086/427976>
+[^jones]: Jones, P. W. (1999). *First- and Second-Order Conservative
+    Remapping Schemes for Grids in Spherical Coordinates*. Monthly
+    Weather Review, 127(9), 2204–2210.
+    <https://doi.org/10.1175/1520-0493(1999)127%3C2204:FASOCR%3E2.0.CO;2>
+[^snyder]: Snyder, J. P. (1987). *Map Projections: A Working Manual*.
+    U.S. Geological Survey Professional Paper 1395. Auxiliary
+    latitudes (authalic, geocentric) and radii of curvature: Ch. 3.
+    <https://doi.org/10.3133/pp1395>
+[^gibb]: Gibb, R. G. (2016). *The rHEALPix Discrete Global Grid
+    System*. IOP Conference Series: Earth and Environmental Science,
+    34, 012012. <https://doi.org/10.1088/1755-1315/34/1/012012>
+[^esmf]: ESMF Reference Manual, *Regridding*: conservative methods
+    operate on the surface of the sphere with great-circle cell edges.
+    <https://earthsystemmodeling.org/docs/release/latest/ESMF_refdoc/>
+[^wgs84]: NGA (2014). *Department of Defense World Geodetic System
+    1984* (NGA.STND.0036_1.0.0_WGS84). Defining parameters:
+    $a = 6378137$ m, $1/f = 298.257223563$.
+[^hpgeo]: healpix-geo, HEALPix for the geosciences, with WGS84
+    ellipsoid support via auxiliary latitudes.
+    <https://github.com/GRID4EARTH/healpix-geo>, reference-system
+    background: <https://healpix-geo.readthedocs.io/en/stable/reference-system.html>
