@@ -8,3 +8,4 @@ __pycache__/
 .stac-upstream/
 portal/.portal.site-url.yaml
 .python-wheels/
+.notebook/

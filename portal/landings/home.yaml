@@ -74,13 +74,30 @@ blocks:
       enabled: true
 
   - type: prose
+    heading: What is Waterpark?
+    source: ../../content/_fragments/what-is-waterpark.md
+    figure:
+      image: ../../assets/landing/waterpark-flow-light.webp
+      imageDark: ../../assets/landing/waterpark-flow-dark.webp
+      video:
+        - ../../assets/landing/waterpark-flow-light.mp4
+        - ../../assets/landing/waterpark-flow-light.webm
+      videoDark:
+        - ../../assets/landing/waterpark-flow-dark.mp4
+        - ../../assets/landing/waterpark-flow-dark.webm
+      alt: >-
+        Source grids - a regular grid, a triangular mesh and a satellite swath -
+        enter a factory that remaps them to HEALPix and builds a Zarr resolution
+        pyramid. An S3 cloud rains the data into a small waterpark, where three
+        robots, ML, Analysis and LLM, slide, float and splash until the pool
+        drains and they wait for the next refill.
+
+  - type: prose
     heading: Where to start
     source: ../../content/_fragments/start-cards.md
 
-
-  - type: prose
-    heading: Try it in your browser
-    source: ../../content/_fragments/playground.md
+  - type: notebook
+    view: lab
 
   - type: prose
     heading: What you can count on
