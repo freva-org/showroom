@@ -27,6 +27,7 @@ OUT="$PORTAL/build/portal"
 CONFIG="portal/portal.yaml"
 STAC_MATERIALS="$PORTAL/.stac-materials"
 PY_MATERIALS="$PORTAL/.python-materials"
+NOTEBOOK="$PORTAL/.notebook"
 
 if [ -z "$FRAMEWORK" ]; then
   FRAMEWORK="$PORTAL/.freva-web-nextgen"
@@ -43,6 +44,9 @@ FRAMEWORK="$(cd "$FRAMEWORK" && pwd)"
 echo "==> framework: $FRAMEWORK ($(git -C "$FRAMEWORK" rev-parse --short HEAD 2>/dev/null || echo 'no git'))"
 
 ( cd "$FRAMEWORK" && npm install --no-audit --no-fund && npm run build )
+for pkg in jupyterlite-freva-kernel jupyterlite-climateclaw jupyterlite-freva-data; do
+  ( cd "$FRAMEWORK" && npm run build:labextension -w "@freva-org/$pkg" )
+done
 export PATH="$FRAMEWORK/node_modules/.bin:$PATH"
 
 if [ -z "${PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD:-}" ]; then
@@ -64,6 +68,9 @@ freva-portal-builder prepare-playground --source-root "$PORTAL" --config "$CONFI
 
 "$PORTAL/scripts/fetch-wheels.sh" || echo "==> no healpix-geo wheel: the examples that import it will not run in the browser"
 
+freva-portal-builder prepare-notebook --source-root "$PORTAL" --config "$CONFIG" --out "$NOTEBOOK" \
+  --stac-materials "$STAC_MATERIALS" --python-materials "$PY_MATERIALS"
+
 if git -C "$PORTAL" rev-parse HEAD >/dev/null 2>&1; then
   SOURCE_DATE_EPOCH="$(git -C "$PORTAL" show -s --format=%ct HEAD)"
 else
@@ -73,7 +80,7 @@ export SOURCE_DATE_EPOCH
 
 cd "$PORTAL"
 REVISION="${GITHUB_SHA:-}"
-MATERIALS=(--stac-materials "$STAC_MATERIALS" --python-materials "$PY_MATERIALS")
+MATERIALS=(--stac-materials "$STAC_MATERIALS" --python-materials "$PY_MATERIALS" --notebook "$NOTEBOOK")
 
 freva-portal-builder validate --source-root "$PORTAL" --config "$CONFIG" "${MATERIALS[@]}"
 rm -rf "$OUT"

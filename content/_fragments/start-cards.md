@@ -1,10 +1,10 @@
-<div class="grid cards cols-2" markdown>
+<div class="grid cards cols-4" markdown>
 
 -   **![Search](../../assets/icons/search.svg){ width="24" } Find a dataset**
 
     ---
 
-    Search by dataset, variable, level and frequency, and copy the store URL.
+    Search by variable, level and frequency; copy the store URL.
 
     [→ Data Browser](/databrowser/)
 
@@ -12,7 +12,7 @@
 
     ---
 
-    The same holdings as STAC, for tools that already speak it.
+    The same holdings as STAC, for tools that speak it.
 
     [→ STAC Browser](/stac-browser/)
 
@@ -20,8 +20,7 @@
 
     ---
 
-    Eight short programs, one plot each, from a first map to a cross-dataset
-    comparison.
+    Eight short programs, one plot each.
 
     [→ Examples](/docs/examples/)
 
@@ -29,7 +28,7 @@
 
     ---
 
-    Chunking, regional selection at high levels, and the usual mistakes.
+    Chunking, regional selection and the usual mistakes.
 
     [→ Tips and tricks](/docs/working-with-data/)
 

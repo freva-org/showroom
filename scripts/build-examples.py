@@ -16,6 +16,9 @@ ROOT = Path(__file__).resolve().parent.parent
 EXAMPLES = ROOT / "examples"
 FIGURES = ROOT / "assets" / "examples"
 PAGES = ROOT / "content" / "examples"
+NOTEBOOKS = ROOT / "notebooks" / "examples"
+SITE = "https://waterpark.dkrz.de"
+ADMONITION = re.compile(r'^!!!\s+(?P<kind>\w+)\s+"(?P<title>[^"]*)"\s*$')
 INDEX = PAGES / "index.md"
 START = '[//]: # "examples-cards:start"'
 END = '[//]: # "examples-cards:end"'
@@ -177,6 +180,110 @@ def render_cards(examples: list[Example]) -> str:
     return '<div class="grid cards cols-2" markdown>\n\n' + "\n".join(cards) + "\n</div>"
 
 
+def notebook_markdown(text: str) -> str:
+    out: list[str] = []
+    lines = text.splitlines()
+    i = 0
+    while i < len(lines):
+        match = ADMONITION.match(lines[i])
+        if not match:
+            out.append(lines[i])
+            i += 1
+            continue
+        out.append(f"> **{match.group('kind').capitalize()}: {match.group('title')}**")
+        out.append(">")
+        i += 1
+        while i < len(lines) and not lines[i].strip():
+            i += 1
+        while i < len(lines) and (lines[i].startswith("    ") or not lines[i].strip()):
+            if not lines[i].strip() and i + 1 < len(lines) and not lines[i + 1].startswith("    "):
+                break
+            out.append(f"> {lines[i][4:]}".rstrip())
+            i += 1
+    return "\n".join(out).strip("\n")
+
+
+def absolute_links(text: str) -> str:
+    text = text.replace("](../high-level-access.md)", f"]({SITE}/docs/working-with-data/)")
+    return re.sub(r"\]\((\d\d_\w+)\.md\)", lambda m: f"]({SITE}/docs/examples/{m.group(1)}/)", text)
+
+
+def source_lines(text: str) -> list[str]:
+    lines = text.split("\n")
+    return [line + "\n" for line in lines[:-1]] + [lines[-1]]
+
+
+def render_notebook(example: Example) -> dict:
+    import base64
+
+    intro = (
+        f"# {example.title}\n\n{example.lead}\n\n"
+        "*The figure is saved with this notebook. Run the cells in order, from the top, to "
+        f"compute it again. The same example on the web: [{example.title}]"
+        f"({SITE}/docs/examples/{example.stem}/).*"
+    )
+    cells: list[dict] = [
+        {"cell_type": "markdown", "id": "intro", "metadata": {}, "source": source_lines(intro)}
+    ]
+    for kind, text in example.blocks:
+        if kind == "md":
+            text = absolute_links(text)
+            cells.append(
+                {
+                    "cell_type": "markdown",
+                    "id": f"md-{len(cells)}",
+                    "metadata": {},
+                    "source": source_lines(notebook_markdown(text)),
+                }
+            )
+        elif kind == "code":
+            cells.append(
+                {
+                    "cell_type": "code",
+                    "id": f"code-{len(cells)}",
+                    "execution_count": None,
+                    "metadata": {},
+                    "outputs": [],
+                    "source": source_lines(text),
+                }
+            )
+        elif example.figure.exists():
+            drawing = next(c for c in reversed(cells) if c["cell_type"] == "code")
+            png = base64.b64encode(example.figure.read_bytes()).decode()
+            drawing["outputs"] = [
+                {
+                    "output_type": "display_data",
+                    "data": {"image/png": png, "text/plain": [f"<{example.title}>"]},
+                    "metadata": {},
+                }
+            ]
+    return {
+        "cells": cells,
+        "metadata": {
+            "kernelspec": {"name": "freva-python", "display_name": "Freva Python", "language": "python"},
+            "language_info": {"name": "python"},
+        },
+        "nbformat": 4,
+        "nbformat_minor": 5,
+    }
+
+
+def render_notebooks(examples: list[Example]) -> None:
+    import json
+
+    NOTEBOOKS.mkdir(parents=True, exist_ok=True)
+    expected = {f"{e.stem}.ipynb" for e in examples}
+    for stale in NOTEBOOKS.glob("*.ipynb"):
+        if stale.name not in expected:
+            stale.unlink()
+    for example in examples:
+        notebook = render_notebook(example)
+        (NOTEBOOKS / f"{example.stem}.ipynb").write_text(
+            json.dumps(notebook, indent=1, ensure_ascii=False) + "\n"
+        )
+    print(f"[examples] wrote {len(examples)} notebooks")
+
+
 def render(examples: list[Example]) -> None:
     PAGES.mkdir(parents=True, exist_ok=True)
     expected = {f"{e.stem}.md" for e in examples} | {"index.md"}
@@ -192,6 +299,7 @@ def render(examples: list[Example]) -> None:
     _, tail = rest.split(END, 1)
     INDEX.write_text(f"{head}{START}\n\n{render_cards(examples)}\n\n{END}{tail}")
     print(f"[examples] wrote {len(examples)} pages and the gallery")
+    render_notebooks(examples)
 
 
 def make_thumbnail(example: Example) -> None:
@@ -230,7 +338,9 @@ def run(examples: list[Example]) -> int:
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="examples/*.py -> content/examples/*.md")
+    parser = argparse.ArgumentParser(
+        description="examples/*.py -> content/examples/*.md and notebooks/examples/*.ipynb"
+    )
     parser.add_argument("--run", action="store_true", help="run the examples and refresh their figures")
     args = parser.parse_args()
     examples = discover()

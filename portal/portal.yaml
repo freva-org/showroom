@@ -79,6 +79,7 @@ chrome:
       enabled: true
       kind: freva
       quality: standard
+      email: false
 
 theme:
   preset: cosmos
@@ -86,6 +87,9 @@ theme:
     tail: short
   tokens:
     colorAccent: "#00796b"
+    fontBody: Roboto
+    fontHeading: Roboto
+    fontMono: Roboto Mono
     light:
       colorBackground: "#ffffff"
 
@@ -103,17 +107,88 @@ pythonPlayground:
   autostart: never
   editableSnippets: true
   maxSessions: 2
+  consoleInPage: true
+  notebook:
+    enabled: true
+    deployment: same-origin
+    assistant:
+      climateclaw:
+        host: https://eve.dkrz.de
+        expectedIssuer: https://freva-keycloak.cloud.dkrz.de/realms/Freva
+        defaultModel: gpt-4.1
+        scopeNote: >-
+          Answer about the Waterpark HEALPix data on s3.waterpark.dkrz.de; prefer the stores
+          listed in the Waterpark data panel. The stores are public Zarr over plain HTTPS, so
+          open them by their https URL and nothing else, e.g.
+          xr.open_zarr("https://s3.waterpark.dkrz.de/reanalysis/healpix/era5/P1M/level_7.zarr",
+          chunks=None) (an s3://bucket/path becomes https://s3.waterpark.dkrz.de/bucket/path).
+          This needs only fsspec, aiohttp and zarr; s3fs is not installed and not needed, so do
+          not use s3:// URLs, s3fs or boto3 and do not try to install packages.
+        examples:
+          - title: Europe, July 2021
+            prompt: |-
+              Compute the mean near-surface air temperature over Europe in July 2021 and draw a map of it. Write one Python cell that does exactly these steps:
+
+              1. Open the store with xarray over HTTPS (no s3:// URL, no s3fs):
+                 ds = xr.open_zarr("https://s3.waterpark.dkrz.de/reanalysis/healpix/era5/P1M/level_7.zarr", chunks=None)
+              2. Take July 2021 of the variable tas: field = ds["tas"].sel(time="2021-07").squeeze()
+              3. The grid is HEALPix: there is no lat or lon dimension, only "cell", so never write .sel(lat=...) or .sel(lon=...). Read the cell centres from ds["latitude"].values and ds["longitude"].values. Longitude runs 0 to 360: first convert it with lon = numpy.where(lon > 180, lon - 360, lon).
+              4. Keep the cells with -15 <= lon <= 35 and 35 <= lat <= 70: europe = field.isel(cell=numpy.flatnonzero(mask))
+              5. Print how many cells are inside and their mean in K. The cells have equal area, so the plain mean is already the area-weighted mean.
+              6. Plot the kept cells with matplotlib: plt.scatter(lon[mask], lat[mask], c=europe.values, s=4, cmap="RdYlBu_r"), a colour bar labelled "K", then plt.show().
+
+              The worked example, to read if anything is unclear: https://waterpark.dkrz.de/examples/03_region_bbox/
+          - title: Zonal mean
+            prompt: |-
+              Plot the zonal-mean near-surface air temperature of July 2021: temperature against latitude. Write one Python cell that does exactly these steps:
+
+              1. Open the store with xarray over HTTPS (no s3:// URL, no s3fs):
+                 ds = xr.open_zarr("https://s3.waterpark.dkrz.de/reanalysis/healpix/era5/P1M/level_7.zarr", chunks=None)
+              2. Take July 2021 of the variable tas: field = ds["tas"].sel(time="2021-07").squeeze()
+              3. HEALPix cells lie on rings of exactly the same latitude, so the zonal mean is a group-by over latitude, with no bins: lat = numpy.round(ds["latitude"].values, 8), then zonal = field.assign_coords(lat=("cell", lat)).groupby("lat").mean()
+              4. Plot zonal (x, in K) against its latitude (y) with plt.plot, label both axes, then plt.show().
+              5. Print the latitude of the warmest and of the coldest ring.
+
+              The worked example, to read if anything is unclear: https://waterpark.dkrz.de/examples/04_zonal_mean/
+          - title: Hovmöller diagram
+            prompt: |-
+              Draw a Hovmöller diagram of zonal-mean near-surface air temperature anomalies from 1980 to 2024: time on the x axis, latitude on the y axis. Write one Python cell that does exactly these steps:
+
+              1. Open the small, coarse level 4 store with xarray over HTTPS (no s3:// URL, no s3fs):
+                 ds = xr.open_zarr("https://s3.waterpark.dkrz.de/reanalysis/healpix/era5/P1M/level_4.zarr", chunks=None)
+              2. Take the years 1980 to 2024 of tas: field = ds["tas"].sel(time=slice("1980", "2024"))
+              3. Zonal mean per ring (HEALPix cells on one ring share their latitude exactly): lat = numpy.round(ds["latitude"].values, 8), then hov = field.assign_coords(lat=("cell", lat)).groupby("lat").mean().load()
+              4. Anomalies against the 1980 to 2009 monthly climatology: clim = hov.sel(time=slice("1980", "2009")).groupby("time.month").mean(), then anom = hov.groupby("time.month") - clim
+              5. Plot with plt.pcolormesh(anom["time"], anom["lat"], anom.transpose("lat", "time"), cmap="RdBu_r", vmin=-3, vmax=3, shading="nearest"), a colour bar labelled "K", then plt.show().
+
+              The worked example, to read if anything is unclear: https://waterpark.dkrz.de/examples/06_hovmoeller/
+    dataPanel:
+      tree: home-1
+      title: Waterpark data
+      icon: ../assets/icons/tree.svg
+      gridlook: true
+      startNotebook: ../notebooks/era5_july_2021.ipynb
+      seedNotebooks:
+        - ../notebooks/era5_july_2021.ipynb
+        - ../notebooks/examples/01_first_map.ipynb
+        - ../notebooks/examples/02_global_mean.ipynb
+        - ../notebooks/examples/03_region_bbox.ipynb
+        - ../notebooks/examples/04_zonal_mean.ipynb
+        - ../notebooks/examples/05_meridional_mean.ipynb
+        - ../notebooks/examples/06_hovmoeller.ipynb
+        - ../notebooks/examples/07_pyramid_levels.ipynb
+        - ../notebooks/examples/08_cross_dataset.ipynb
   # monkeypatch healpix-geo until they release
   initialSource: |
     import micropip
-    from js import location
     from pyodide.http import pyfetch
-    _wheels = str(location.href).split("/_portal/")[0] + "/python-wheels/"
-    _names = await (await pyfetch(_wheels + "wheels.json")).json()
-    if _names:
+    _wheels = PORTAL_BASE_URL + "python-wheels/"
+    _r = await pyfetch(_wheels + "wheels.json")
+    _names = await _r.json() if _r.ok else []
+    if isinstance(_names, list) and _names:
         await micropip.install([_wheels + _n for _n in _names], deps=False)
-    print("healpix-geo is installed" if _names else "healpix-geo: this build ships no wheel")
-    del micropip, location, pyfetch, _wheels, _names
+    print("healpix-geo is installed" if _names else "healpix-geo: no wheel is served here")
+    del micropip, pyfetch, _wheels, _r, _names
   connectOrigins:
     - https://s3.waterpark.dkrz.de
     - https://freva.dkrz.de
@@ -256,21 +331,61 @@ components:
 
 
 navigation:
+  pager: true
   header:
     - landing: home
       label: Home
-    - component: data
-      label: Data Browser
-    - component: catalog
-      label: STAC Browser
-    - href: /docs/examples/
-      label: Examples
-    - href: /docs/working-with-data/
-      label: Tips and tricks
-    - href: /docs/storage-concepts/
-      label: Concepts
-    - href: /docs/tools/
-      label: Operation
+    - label: Find data
+      component: data
+      links:
+        - component: data
+          label: Data Browser
+        - component: catalog
+          label: STAC Browser
+    - label: Examples
+      href: /docs/examples/
+      links:
+        - href: /docs/examples/
+          label: Start here
+        - href: /docs/examples/01_first_map/
+          label: A map of one month
+        - href: /docs/examples/02_global_mean/
+          label: The global mean is just a mean
+        - href: /docs/examples/03_region_bbox/
+          label: Cutting out a region
+        - href: /docs/examples/04_zonal_mean/
+          label: Zonal means come for free
+        - href: /docs/examples/05_meridional_mean/
+          label: Meridional means, and why they are harder
+        - href: /docs/examples/06_hovmoeller/
+          label: A Hovmöller diagram
+        - href: /docs/examples/07_pyramid_levels/
+          label: Moving up and down the pyramid
+        - href: /docs/examples/08_cross_dataset/
+          label: Comparing two datasets without regridding
+    - label: Tips and tricks
+      href: /docs/working-with-data/
+      links:
+        - href: /docs/working-with-data/
+          label: High resolution data
+    - label: Concepts
+      href: /docs/storage-concepts/
+      links:
+        - href: /docs/storage-concepts/
+          label: HEALPix in Zarr on S3
+        - href: /docs/storage-concepts/why-healpix/
+          label: Why HEALPix?
+        - href: /docs/storage-concepts/zarr-and-s3/
+          label: Why Zarr and S3?
+        - href: /docs/technical-decisions/
+          label: Remapping decisions
+        - href: /docs/remapping-benchmark/
+          label: Remapping benchmark
+    - label: Operation
+      href: /docs/tools/
+      links:
+        - href: /docs/tools/
+          label: Operator Tools
 
 
 announcementFeed:
