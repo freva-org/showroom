@@ -66,12 +66,6 @@ chrome:
             href: https://www.dkrz.de
           - label: Freva
             href: https://www.freva.dkrz.de
-          - label: AWI
-            href: https://www.awi.de/en/
-          - label: Hereon
-            href: https://www.hereon.de/
-          - label: Universität Hamburg
-            href: https://www.uni-hamburg.de/en.html
           - label: MPI-M
             href: https://mpimet.mpg.de/en/homepage
     prose: ../content/_fragments/footer-note.md
@@ -301,18 +295,6 @@ components:
         keywords: [climate, FAIR, Freva, HEALPix, Zarr]
         license: CC-BY-4.0
         providers:
-          - name: Alfred Wegener Institute, Helmholtz Centre for Polar and Marine Research (AWI)
-            url: https://www.awi.de/en/
-            roles: [producer]
-            logo: ../assets/logos/awi.png
-          - name: Helmholtz-Zentrum Hereon
-            url: https://www.hereon.de/
-            roles: [producer]
-            logo: ../assets/logos/hereon.png
-          - name: Universität Hamburg
-            url: https://www.uni-hamburg.de/en.html
-            roles: [producer]
-            logo: ../assets/logos/uni-hamburg.png
           - name: Max Planck Institute for Meteorology (MPI-M)
             url: https://mpimet.mpg.de/en/homepage
             roles: [producer]

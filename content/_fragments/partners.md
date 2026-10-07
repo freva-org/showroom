@@ -1,6 +1,5 @@
 Waterpark is hosted and operated by the Deutsches Klimarechenzentrum. The
-datasets on it are produced together with research partners across Hamburg
-and Bremerhaven.
+datasets on it are produced together with research partners in Hamburg.
 
 <div class="grid cards cols-3" markdown>
 
