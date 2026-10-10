@@ -17,6 +17,8 @@ blocks:
         component: catalog
       - label: Learn by example
         href: /docs/examples/
+      - label: Open the notebook
+        notebook: lab
 
   - type: dataset-tree
     s3:
@@ -95,9 +97,6 @@ blocks:
   - type: prose
     heading: Where to start
     source: ../../content/_fragments/start-cards.md
-
-  - type: notebook
-    view: lab
 
   - type: prose
     heading: What you can count on
