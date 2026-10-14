@@ -164,14 +164,22 @@ pythonPlayground:
       startNotebook: ../notebooks/era5_july_2021.ipynb
       seedNotebooks:
         - ../notebooks/era5_july_2021.ipynb
-        - ../notebooks/examples/01_first_map.ipynb
-        - ../notebooks/examples/02_global_mean.ipynb
-        - ../notebooks/examples/03_region_bbox.ipynb
-        - ../notebooks/examples/04_zonal_mean.ipynb
-        - ../notebooks/examples/05_meridional_mean.ipynb
-        - ../notebooks/examples/06_hovmoeller.ipynb
-        - ../notebooks/examples/07_pyramid_levels.ipynb
-        - ../notebooks/examples/08_cross_dataset.ipynb
+        - path: ../notebooks/examples/01_first_map.ipynb
+          page: /docs/examples/01_first_map/
+        - path: ../notebooks/examples/02_global_mean.ipynb
+          page: /docs/examples/02_global_mean/
+        - path: ../notebooks/examples/03_region_bbox.ipynb
+          page: /docs/examples/03_region_bbox/
+        - path: ../notebooks/examples/04_zonal_mean.ipynb
+          page: /docs/examples/04_zonal_mean/
+        - path: ../notebooks/examples/05_meridional_mean.ipynb
+          page: /docs/examples/05_meridional_mean/
+        - path: ../notebooks/examples/06_hovmoeller.ipynb
+          page: /docs/examples/06_hovmoeller/
+        - path: ../notebooks/examples/07_pyramid_levels.ipynb
+          page: /docs/examples/07_pyramid_levels/
+        - path: ../notebooks/examples/08_cross_dataset.ipynb
+          page: /docs/examples/08_cross_dataset/
   # monkeypatch healpix-geo until they release
   initialSource: |
     import micropip
@@ -345,6 +353,8 @@ navigation:
           label: Moving up and down the pyramid
         - href: /docs/examples/08_cross_dataset/
           label: Comparing two datasets without regridding
+    - label: Notebook
+      notebook: lab
     - label: Tips and tricks
       href: /docs/working-with-data/
       links:
