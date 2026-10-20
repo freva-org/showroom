@@ -1,0 +1,28 @@
+{
+  "name": "showroom",
+  "private": true,
+  "version": "0.0.0",
+  "description": "The Freva components the site embeds; scripts/prepare.mjs builds them into .prepared/.",
+  "type": "module",
+  "license": "BSD-3-Clause",
+  "engines": {
+    "node": ">=22.12"
+  },
+  "scripts": {
+    "prepare-assets": "node scripts/prepare.mjs"
+  },
+  "dependencies": {
+    "@freva-org/browser-python": "2610.1.0",
+    "@freva-org/data-inspector": "2610.1.0",
+    "@freva-org/databrowser": "2610.0.0",
+    "@freva-org/dataset-tree": "2610.2.0",
+    "@freva-org/freva-client-terminal": "2610.0.0",
+    "@freva-org/jupyterlite-freva-data": "2610.2.0",
+    "@freva-org/jupyterlite-freva-kernel": "2610.2.0"
+  },
+  "devDependencies": {
+    "esbuild": "0.28.2",
+    "postcss": "8.5.30",
+    "postcss-prefix-selector": "2.2.1"
+  }
+}

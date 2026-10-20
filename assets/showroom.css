@@ -1,0 +1,391 @@
+/* Showroom's design tokens and root size (--wp-rem), read by the shared Freva UI. */
+:root {
+  --wp-rem: 0.8rem;
+  --accent: #00796b;
+  --accent-hi: #00574d;
+  --accent-hi-ink: #f6f5f1;
+  --accent-ink: #f6f5f1;
+  --accent-text: #00786a;
+  --bg: #fff;
+  --chip: #f2f3f3;
+  --chrome-bg: #00796b;
+  --chrome-chip: #00685c;
+  --chrome-chip-hi: #005a4f;
+  --chrome-ink: #fff;
+  --chrome-ink-2: #e6f2f0;
+  --chrome-line: #339489;
+  --chrome-line-hi: #61aca3;
+  --chrome-max: 1440px;
+  --chrome-muted: #e6f2f0;
+  --chrome-surface: #00665a;
+  --content-max: 1440px;
+  --danger: #8c4a3d;
+  --danger-bg: #faf7f6;
+  --font-display: "Roboto", "Roboto", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-mono: "Roboto Mono", ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+  --font-ui: "Roboto", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --footer-bg: #00796b;
+  --footer-chip: #00685c;
+  --footer-h-app: 34px;
+  --footer-line: #339489;
+  --footer-line-hi: #61aca3;
+  --footer-muted: #e6f2f0;
+  --footer-strong: #fff;
+  --footer-surface: #00665a;
+  --footer-text: #e6f2f0;
+  --header-bg: #00796b;
+  --header-h-app: 48px;
+  --header-h-app-scrolled: 44px;
+  --header-h-scrolled: 54px;
+  --ink: #14202c;
+  --ink-2: #4b545e;
+  --line: #e8e9ea;
+  --line-2: #dddfe0;
+  --muted: #6a7179;
+  --portal-color-accent: #00796b;
+  --portal-color-accent-contrast: #f6f5f1;
+  --portal-color-background: #0b1522;
+  --portal-color-border: #22384d;
+  --portal-color-surface: #101d2c;
+  --portal-color-text: #eaf1f7;
+  --portal-color-text-muted: #93a6b8;
+  --portal-corner-style: soft;
+  --portal-density: comfortable;
+  --portal-heading-scale: 1.4;
+  --portal-measure: 0px;
+  --portal-radius: 6px;
+  --portal-space: 1rem;
+  --r-10: 10px;
+  --r-11: 11px;
+  --r-12: 12px;
+  --r-14: 14px;
+  --r-16: 16px;
+  --r-6: 6px;
+  --r-8: 8px;
+  --r-9: 9px;
+  --r-pill: 999px;
+  --scrollbar-thumb: color-mix(in srgb, #00796b 38%, #fff);
+  --scrollbar-thumb-hover: #00796b;
+  --shadow-card: 0 1px 2px #14202c0a, 0 18px 40px -28px #14202c47;
+  --shadow-footer: 0 -14px 34px -24px #14202c8c;
+  --shadow-panel: 0 14px 34px #14202c1f;
+  --shell-pad: clamp(16px, 2.4vw, 48px);
+  --surface: #f9f9fa;
+  --surface-2: #fcfcfd;
+  --syn-added: #2f6f4f;
+  --syn-added-bg: #f8faf9;
+  --syn-comment: #5d6a5d;
+  --syn-keyword: #7a3b8f;
+  --syn-name: #1b4f72;
+  --syn-number: #9f5229;
+  --syn-output: #67675f;
+  --syn-punct: #5b6470;
+  --syn-removed: #8c4a3d;
+  --syn-removed-bg: #faf7f6;
+  --syn-string: #2f6f4f;
+  --tile: #f9f9fa;
+  --warning: #7d6119;
+  --warning-bg: #faf9f7;
+}
+@media screen and (min-width: 100em) {
+  :root {
+    --wp-rem: calc(0.8rem / 1.1);
+  }
+}
+@media screen and (min-width: 125em) {
+  :root {
+    --wp-rem: calc(0.8rem / 1.2);
+  }
+}
+.portal-overlay-root {
+  font-family: var(--font-ui);
+  font-size: calc(0.9375 * var(--wp-rem));
+  line-height: 1.5;
+  color: var(--ink);
+  -webkit-font-smoothing: antialiased;
+}
+:root[data-theme="dark"],
+:root:not([data-theme]):has(> body[data-md-color-scheme="slate"]) {
+  --accent-hi: #1f897d;
+  --accent-hi-ink: #0b1117;
+  --accent-text: #00ac98;
+  --bg: #10161d;
+  --chip: #202a36;
+  --danger: #d9948a;
+  --danger-bg: #2b1d1a;
+  --ink: #e9eef3;
+  --ink-2: #aab5c1;
+  --line: #263140;
+  --line-2: #2f3b4a;
+  --muted: #8794a1;
+  --scrollbar-thumb: color-mix(in srgb, #00796b 46%, #10161d);
+  --surface: #171f28;
+  --surface-2: #141b23;
+  --syn-added: #90d6ab;
+  --syn-added-bg: #16261d;
+  --syn-comment: #8b9c8b;
+  --syn-keyword: #d3a2e8;
+  --syn-name: #8fc4f0;
+  --syn-number: #eaa77a;
+  --syn-output: #8794a1;
+  --syn-punct: #9aa5b1;
+  --syn-removed: #e39a90;
+  --syn-removed-bg: #2b1d1a;
+  --syn-string: #90d6ab;
+  --tile: #1c2634;
+  --warning: #d8bd77;
+  --warning-bg: #2a2317;
+}
+data-inspector.wp-inspector {
+  --di-bg: var(--surface);
+  --di-fg: var(--ink);
+  --di-muted: var(--muted);
+  --di-border: var(--line-2, var(--line));
+  --di-surface: var(--surface-2);
+  --di-accent: var(--accent);
+  --xr-font-color0: var(--ink);
+  --xr-font-color2: var(--muted);
+  --xr-font-color3: var(--muted);
+  --xr-border-color: var(--line-2, var(--line));
+  --xr-disabled-color: var(--muted);
+  --xr-background-color: var(--surface);
+  --xr-background-color-row-even: var(--surface);
+  --xr-background-color-row-odd: var(--surface-2);
+  --xr-chunk-face: var(--accent);
+  --xr-chunk-top: color-mix(in srgb, var(--accent) 68%, #fff);
+  --xr-chunk-side: color-mix(in srgb, var(--accent) 80%, #000);
+  --xr-chunk-edge: color-mix(in srgb, var(--accent) 38%, #fff);
+}
+data-inspector.wp-inspector .di-zarr-row {
+  display: none;
+}
+data-inspector.wp-inspector .di-header {
+  background: var(--chrome-bg);
+  border-bottom: none;
+}
+data-inspector.wp-inspector .di-header :is(.di-title, .di-title-ico, .di-pathbar-label, .di-muted, .di-close) {
+  color: var(--chrome-ink);
+}
+data-inspector.wp-inspector .di-header .di-close:hover {
+  background: var(--chrome-chip);
+  color: var(--chrome-ink);
+}
+data-inspector.wp-inspector .di-header .di-btn-primary {
+  background: var(--chrome-chip);
+  border-color: var(--chrome-line-hi);
+  color: var(--chrome-ink);
+}
+data-inspector.wp-inspector .di-header .di-btn-primary:hover:not(:disabled) {
+  filter: none;
+  background: var(--chrome-chip-hi);
+}
+data-inspector.wp-inspector .di-header .di-btn-split {
+  border-left-color: var(--chrome-line-hi);
+}
+data-inspector.wp-inspector .xr-wrap {
+  max-width: none;
+}
+
+/* Runnable code blocks in Material's code colours and fonts. */
+.md-typeset .portal-code-figure,
+.md-typeset .portal-document-notebook {
+  --chip: var(--md-code-bg-color);
+  --surface: var(--md-default-bg-color);
+  --ink: var(--md-default-fg-color);
+  --ink-2: var(--md-default-fg-color--light);
+  --line: var(--md-default-fg-color--lightest);
+  --line-2: var(--md-default-fg-color--lighter);
+  --accent: var(--md-typeset-a-color);
+  --font-mono: var(--md-code-font-family);
+  --r-6: 0.1rem;
+  --r-8: 0.1rem;
+  --syn-comment: var(--md-code-hl-comment-color);
+  --syn-keyword: var(--md-code-hl-keyword-color);
+  --syn-string: var(--md-code-hl-string-color);
+  --syn-number: var(--md-code-hl-number-color);
+  --syn-name: var(--md-code-hl-name-color);
+  --syn-punct: var(--md-code-hl-punctuation-color);
+}
+.md-typeset .portal-code-figure {
+  margin: 1em 0;
+}
+.md-typeset .portal-code-figure > .portal-code-block {
+  background-color: var(--md-code-bg-color);
+  border-radius: 0 0 0.1rem 0.1rem;
+}
+.md-typeset .portal-code-figure > .portal-code-block > code {
+  border-radius: 0;
+}
+.md-typeset .portal-code-figure[data-portal-editable] > .portal-code-block > * {
+  font-size: 0.85em;
+}
+.md-typeset .portal-code-figure[data-portal-editable] > .portal-code-block > :is(.portal-code-gutter, code, .portal-code-editor-grid) {
+  padding-top: 0.7720588235em;
+  padding-bottom: 0.7720588235em;
+}
+.md-typeset .portal-code-figure button {
+  font-family: inherit;
+}
+.portal-code-figure :is(.o, .ow) { color: var(--md-code-hl-operator-color); }
+.portal-code-figure .p { color: var(--md-code-hl-punctuation-color); }
+.portal-code-figure :is(.cpf, .l, .s, .s1, .s2, .sb, .sc, .si, .ss) { color: var(--md-code-hl-string-color); }
+.portal-code-figure :is(.cp, .se, .sh, .sr, .sx) { color: var(--md-code-hl-special-color); }
+.portal-code-figure :is(.il, .m, .mb, .mf, .mh, .mi, .mo) { color: var(--md-code-hl-number-color); }
+.portal-code-figure :is(.k, .kd, .kn, .kp, .kr, .kt, .nd, .ni, .nl, .nt) { color: var(--md-code-hl-keyword-color); }
+.portal-code-figure :is(.kc, .n) { color: var(--md-code-hl-name-color); }
+.portal-code-figure :is(.bp, .nb, .no) { color: var(--md-code-hl-constant-color); }
+.portal-code-figure :is(.nc, .ne, .nf, .nn) { color: var(--md-code-hl-function-color); }
+.portal-code-figure :is(.c, .c1, .ch, .cm, .cs, .sd) { color: var(--md-code-hl-comment-color); }
+.portal-code-figure :is(.na, .nv, .vc, .vg, .vi) { color: var(--md-code-hl-variable-color); }
+.portal-code-figure .hll {
+  background-color: var(--md-code-hl-color--light);
+  box-shadow: 2px 0 0 0 var(--md-code-hl-color) inset;
+}
+.md-typeset .portal-document-notebook {
+  margin-top: 6px;
+}
+.md-typeset .portal-document-notebook,
+.md-typeset .portal-document-notebook:hover {
+  color: var(--ink);
+}
+:is(.portal-code-figure, .portal-overlay-root, .portal-overlay-root-top, .portal-dataset-tree-block) [hidden],
+.portal-code-figure[hidden] {
+  display: none !important;
+}
+.md-typeset .portal-code-figure :is(.md-code__nav, .md-clipboard) {
+  display: none;
+}
+
+/* The landing page's hero and dataset tree, as Showroom draws them. */
+.md-main__inner:has(> .wp-home) {
+  display: block;
+  max-width: none;
+  margin: 0;
+  padding: 0;
+}
+.wp-home .headerlink {
+  display: none;
+}
+.wp-home {
+  color: var(--ink);
+  font-family: var(--font-ui);
+  -webkit-font-smoothing: antialiased;
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.5;
+  overflow-x: hidden;
+}
+.wp-home h1,
+.wp-home h2,
+.wp-home h3,
+.wp-home h4 {
+  font-family: var(--font-display);
+  letter-spacing: -0.01em;
+  margin: 0 0 0.5em;
+  font-weight: 600;
+}
+.wp-home a {
+  color: inherit;
+}
+.wp-home .wp-home-rest a {
+  color: var(--accent-text);
+  font-weight: 600;
+}
+.wp-home :focus-visible {
+  outline: 2px solid var(--accent-text, var(--accent));
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+.wp-home .portal-landing {
+  max-width: var(--content-max);
+  padding: clamp(28px, 4vw, 56px) var(--shell-pad) 40px;
+  margin: 0 auto;
+}
+.wp-home .portal-eyebrow {
+  font-family: var(--font-mono);
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  color: var(--muted);
+  margin: 0 0 22px;
+  font-size: 11.5px;
+}
+.wp-home .portal-hero-heading {
+  font-family: var(--font-display);
+  letter-spacing: -0.028em;
+  text-wrap: pretty;
+  max-width: 17ch;
+  font-size: clamp(38px, 3.6vw, 64px);
+  font-weight: 700;
+  line-height: 1.04;
+}
+.wp-home .portal-hero-text {
+  color: var(--ink-2);
+  max-width: 52ch;
+  font-size: clamp(16.5px, 1.1vw, 18.5px);
+  line-height: 1.62;
+}
+.wp-home .portal-block-heading {
+  margin-bottom: 18px;
+  font-size: clamp(19px, 1.35vw, 22px);
+}
+.wp-home .portal-hero-actions {
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  display: flex;
+}
+.wp-home .portal-hero {
+  margin-bottom: clamp(28px, 3.4vw, 56px);
+}
+.wp-home .portal-hero-row {
+  align-items: start;
+  gap: clamp(32px, 4vw, 88px);
+  padding: clamp(24px, 4vw, 72px) 0 clamp(16px, 2vw, 32px);
+  display: grid;
+}
+.wp-home .portal-hero-row[data-columns="two"] {
+  grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
+}
+.wp-home .portal-hero-row[data-columns="two"][data-aside="wide"] {
+  grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
+}
+.wp-home .portal-hero-aside {
+  flex-direction: column;
+  gap: 14px;
+  display: flex;
+}
+.wp-home .portal-hero-lead > :last-child {
+  margin-bottom: 0;
+}
+@media (width<=900px) {
+  .wp-home .portal-hero-row[data-columns="two"],
+  .wp-home .portal-hero-row[data-columns="two"][data-aside="wide"] {
+    grid-template-columns: minmax(0, 1fr);
+    gap: clamp(24px, 4vw, 40px);
+  }
+}
+.wp-home .portal-button {
+  border: 1px solid var(--line-2);
+  border-radius: var(--r-10);
+  background: var(--surface);
+  height: 46px;
+  color: var(--ink);
+  font-family: var(--font-display);
+  cursor: pointer;
+  justify-content: center;
+  align-items: center;
+  padding: 0 22px;
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none;
+  display: inline-flex;
+}
+.wp-home .portal-button-primary {
+  background: var(--accent);
+  color: var(--accent-ink);
+  border-color: #0000;
+}
+/* The Notebook menu is a plain tab, as in Showroom. */
+.md-header__dropdown:has(> .md-header__dropdown-content > a[href*="notebook/lab/"]) :is(.wp-header-menu-heading > button, .md-header__dropdown-content) {
+  display: none !important;
+}

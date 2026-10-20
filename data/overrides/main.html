@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+
+{% block extrahead %}
+  {{ super() }}
+  {% if wp_ui_css %}<link rel="stylesheet" href="{{ wp_ui_css }}">{% endif %}
+{% endblock %}
+
+{# On example pages, show the complete example list above the page TOC.
+   Keep Material's normal navigation drawer for smaller screens. #}
+{% block site_nav %}
+  {% if page and page.file.src_uri.startswith("examples/") %}
+    {% if nav %}
+      <div class="md-sidebar md-sidebar--primary"
+           data-md-component="sidebar" data-md-type="navigation"
+           {% if "navigation" in page.meta.get("hide", []) %}hidden{% endif %}>
+        <div class="md-sidebar__scrollwrap">
+          <div class="md-sidebar__inner">
+            {% include "partials/nav.html" %}
+          </div>
+        </div>
+      </div>
+    {% endif %}
+    <div class="md-sidebar md-sidebar--secondary"
+         data-md-component="sidebar" data-md-type="toc">
+      <div class="md-sidebar__scrollwrap">
+        <div class="md-sidebar__inner">
+          {% for section in nav %}
+            {% if section.title == "Examples" and section.children %}
+              <nav class="md-nav" aria-label="Examples">
+                <span class="md-nav__title">Examples</span>
+                <ul class="md-nav__list">
+                  {% for entry in section.children recursive %}
+                    <li class="md-nav__item{% if entry.active %} md-nav__item--active{% endif %}">
+                      {% if entry.children %}
+                        <span class="md-nav__link">{{ entry.title }}</span>
+                        <ul class="md-nav__list">{{ loop(entry.children) }}</ul>
+                      {% else %}
+                        <a href="{{ entry.url | url }}"
+                           class="md-nav__link{% if entry == page %} md-nav__link--active{% endif %}"
+                           {% if entry == page %}aria-current="page"{% endif %}>
+                          {{ entry.title }}
+                        </a>
+                      {% endif %}
+                    </li>
+                  {% endfor %}
+                </ul>
+              </nav>
+            {% endif %}
+          {% endfor %}
+          {% if "toc" not in page.meta.get("hide", []) %}
+            <div style="margin-top: 1rem;">
+              {% include "partials/toc.html" %}
+            </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  {% else %}
+    {{ super() }}
+  {% endif %}
+{% endblock %}
+
+{% block scripts %}
+  {{ super() }}
+  {% if wp_site %}
+    <div id="portal-overlay-root" class="portal-overlay-root"></div>
+    {% if wp_playground %}<div class="portal-python-config" hidden data-portal-python-playground="{{ wp_playground }}"></div>{% endif %}
+    <script type="application/json" id="wp-site">{{ wp_site }}</script>
+    <script type="module" src="{{ wp_site_script }}"></script>
+  {% endif %}
+{% endblock %}

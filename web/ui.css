@@ -1,0 +1,5 @@
+@import "@freva-org/browser-python/ui/code.css";
+@import "@freva-org/browser-python/ui/notebook.css";
+@import "@freva-org/freva-client-terminal/layers.css";
+@import "@freva-org/dataset-tree/styles.css";
+@import "@freva-org/dataset-tree/ui.css";
