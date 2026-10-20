@@ -1,9 +1,18 @@
-# What the examples need, and nothing else. Unpinned: the examples track the
-# latest releases.
-xarray
-zarr
-s3fs          # the S3 filesystem behind the s3:// URLs
-numpy
-matplotlib
-cartopy       # coastlines
-healpix-geo   # nested indexing, coordinates, box and cone coverage
+# What the examples need, and nothing else.
+#
+# Deliberately short. An example that needs a package not listed here is an
+# example that a reader cannot run, which defeats the point of the examples.
+# Before adding a line, check whether the thing it does is four lines of
+# numpy, because on this grid it usually is.
+#
+# Kept separate from requirements-docs.txt because the two never run in the
+# same place: the docs build renders committed figures and never touches S3,
+# and the examples workflow runs the examples and never builds the site.
+
+xarray~=2024.10
+zarr~=2.18
+s3fs~=2024.10          # the S3 filesystem behind the s3:// URLs
+numpy~=2.1
+matplotlib~=3.9
+cartopy~=0.24          # coastlines
+healpix-geo~=0.2       # nested indexing, coordinates, box and cone coverage

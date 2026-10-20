@@ -1,0 +1,189 @@
+/* STAC Browser page layout, and Showroom's presentation of it. */
+body.waterpark-stac-page .md-main__inner,
+body.waterpark-stac-page .md-content,
+body.waterpark-stac-page .md-content__inner {
+  max-width: none;
+  margin: 0;
+}
+body.waterpark-stac-page .md-content__inner {
+  padding-top: 0;
+}
+body.waterpark-stac-page .md-content__inner::before {
+  display: none;
+}
+body.waterpark-stac-page .md-content h1 {
+  display: none;
+}
+body.waterpark-stac-page #stac-browser h1 {
+  display: revert;
+}
+.waterpark-stac-wrapper {
+  width: 100%;
+}
+body.waterpark-stac-page #stac-browser-mount,
+body.waterpark-stac-page #stac-browser {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  min-height: calc(100dvh - var(--wp-chrome, 96px));
+  overflow: visible;
+}
+body.waterpark-stac-page #stac-browser-mount {
+  position: relative;
+  z-index: 0;
+  isolation: isolate;
+}
+body.waterpark-stac-page #stac-browser > header {
+  top: var(--wp-chrome, 48px);
+}
+body.waterpark-stac-page #stac-browser .offcanvas,
+body.waterpark-stac-page #stac-browser .offcanvas-backdrop,
+body.waterpark-stac-page #stac-browser .modal-backdrop {
+  top: var(--wp-chrome, 48px);
+  bottom: 0;
+  height: auto;
+}
+body.waterpark-stac-page #stac-browser .offcanvas-backdrop,
+body.waterpark-stac-page #stac-browser .modal-backdrop {
+  inset-inline: 0;
+  width: auto;
+  opacity: 0.25;
+}
+body.waterpark-stac-page #stac-browser .offcanvas {
+  pointer-events: auto;
+}
+body.waterpark-stac-page #stac-browser.container {
+  max-width: none;
+  padding-inline: 12px;
+}
+body.waterpark-stac-page #stac-browser-mount {
+  --sb-header-background: var(--surface-2);
+  --sb-header-color: var(--ink);
+  --sb-header-hover-color: var(--accent);
+  --sb-header-button-background: transparent;
+  --sb-header-button-border-color: var(--line-2);
+  --sb-header-button-hover-background: var(--chip);
+  --sb-header-button-active-background: var(--chip);
+  --sb-header-hover-button-border-color: var(--accent);
+  --sb-h1-color: var(--ink);
+  --sb-subheadings-color: var(--ink-2);
+  --sb-header-font-size: calc(1.05 * var(--wp-rem, 1rem));
+  --sb-header-font-weight: 600;
+  --sb-block-gap: 12px;
+  --bs-body-bg: var(--surface);
+  --bs-link-color: var(--accent-text);
+  --bs-link-hover-color: var(--accent-hi);
+  --bs-primary: var(--accent);
+  --bs-primary-text-emphasis: var(--accent-text);
+  --bs-primary-border-subtle: var(--accent);
+  --bs-focus-ring-color: color-mix(in srgb, var(--accent) 35%, transparent);
+  --bs-form-check-bg-image-checked-color: var(--accent);
+}
+body.waterpark-stac-page #stac-browser .form-control:focus,
+body.waterpark-stac-page #stac-browser .form-select:focus {
+  border-color: var(--accent-text);
+}
+body.waterpark-stac-page #stac-browser .form-check-input:checked {
+  background-color: var(--accent);
+  border-color: var(--accent);
+}
+body.waterpark-stac-page #stac-browser a:not(.btn):not(.nav-link) {
+  color: var(--accent-text);
+}
+body.waterpark-stac-page #stac-browser a:not(.btn):not(.nav-link):hover {
+  color: var(--accent-hi);
+}
+body.waterpark-stac-page #stac-browser > header .site {
+  border-bottom: 1px solid var(--line);
+}
+body.waterpark-stac-page #stac-browser > header .site .title {
+  text-shadow: none;
+}
+body.waterpark-stac-page #stac-browser > header .site > .col-md-12 > .title :is(h1, .h1) {
+  font-family: var(--font-display);
+  font-size: calc(1.5 * var(--wp-rem, 1rem));
+  text-shadow: none;
+}
+body.waterpark-stac-page #stac-browser h1 {
+  font-size: calc(1.6 * var(--wp-rem, 1rem));
+}
+body.waterpark-stac-page #stac-browser h2 {
+  font-size: calc(1.2 * var(--wp-rem, 1rem));
+}
+body.waterpark-stac-page #stac-browser h3 {
+  font-size: calc(1.05 * var(--wp-rem, 1rem));
+}
+body.waterpark-stac-page #stac-browser .btn {
+  font-size: calc(0.85 * var(--wp-rem, 1rem));
+  padding: calc(0.35 * var(--wp-rem, 1rem)) calc(0.7 * var(--wp-rem, 1rem));
+  border-radius: var(--r-8);
+}
+body.waterpark-stac-page #stac-browser .list-group-item {
+  padding: calc(0.5 * var(--wp-rem, 1rem)) calc(0.75 * var(--wp-rem, 1rem));
+}
+body.waterpark-stac-page #stac-browser .badge {
+  font-size: 0.72em;
+}
+body.waterpark-stac-page #stac-browser .card {
+  border-radius: var(--r-12);
+}
+body.waterpark-stac-page #stac-browser :is(.btn-outline-primary, .btn-outline-secondary) {
+  --bs-btn-color: var(--accent-text);
+  --bs-btn-border-color: var(--accent-text);
+  --bs-btn-hover-color: var(--accent-ink);
+  --bs-btn-hover-bg: var(--accent);
+  --bs-btn-hover-border-color: var(--accent);
+  --bs-btn-active-color: var(--accent-ink);
+  --bs-btn-active-bg: var(--accent);
+  --bs-btn-active-border-color: var(--accent);
+  --bs-btn-disabled-color: var(--accent-text);
+  --bs-btn-disabled-border-color: var(--accent-text);
+}
+body.waterpark-stac-page #stac-browser > header .btn {
+  --bs-btn-color: var(--accent-text);
+  --bs-btn-border-color: var(--accent-text);
+}
+body.waterpark-stac-page #stac-browser .btn-primary {
+  --bs-btn-bg: var(--accent);
+  --bs-btn-border-color: var(--accent);
+  --bs-btn-color: var(--accent-ink);
+  --bs-btn-hover-bg: var(--accent);
+  --bs-btn-hover-border-color: var(--accent);
+  --bs-btn-hover-color: var(--accent-ink);
+  --bs-btn-active-bg: var(--accent);
+  --bs-btn-active-border-color: var(--accent);
+  --bs-btn-disabled-bg: var(--accent);
+  --bs-btn-disabled-border-color: var(--accent);
+}
+body.waterpark-stac-page #stac-browser > footer {
+  margin-top: 24px;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+  color: var(--muted);
+  font-size: 12.5px;
+}
+body.waterpark-stac-page #stac-browser :is(.intro, .links) > h2 {
+  display: none;
+}
+body.waterpark-stac-page #stac-browser .styled-description img {
+  width: 100%;
+  height: auto;
+  max-width: 900px;
+  border-radius: var(--r-12);
+}
+#stac-browser .provider:is([href*="awi.de"], [href*="hereon.de"], [href*="uni-hamburg"], [href*="mpimet.mpg.de"], [href*="www.dkrz.de"], [href*="freva"]) .title::before {
+  content: "";
+  display: inline-block;
+  width: 1.25em;
+  height: 1.25em;
+  margin-right: 0.5em;
+  vertical-align: -0.25em;
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+}
+#stac-browser .provider[href*="awi.de"] .title::before { background-image: url(logos/awi.svg); }
+#stac-browser .provider[href*="hereon.de"] .title::before { background-image: url(logos/hereon.svg); }
+#stac-browser .provider[href*="uni-hamburg"] .title::before { background-image: url(logos/uni-hamburg.svg); }
+#stac-browser .provider[href*="mpimet.mpg.de"] .title::before { background-image: url(logos/mpi-m.svg); }
+#stac-browser .provider[href*="www.dkrz.de"] .title::before { background-image: url(logos/dkrz.svg); }

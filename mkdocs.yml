@@ -1,0 +1,186 @@
+site_name: Waterpark
+site_description: The HEALPix Data Hub on s3
+site_url: !ENV [SITE_URL, "https://freva-org.github.io/showroom/"]
+site_dir: site
+docs_dir: .build/data
+use_directory_urls: true
+
+theme:
+  name: material
+  custom_dir: data/overrides
+  logo: assets/logo-512.png
+  favicon: assets/favicon.ico
+
+  icon:
+    admonition:
+      example: material/database
+    previous: fontawesome/solid/angle-left
+    next: fontawesome/solid/angle-right
+
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: teal
+      accent: amber
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: teal
+      accent: amber
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+
+  features:
+    - content.code.copy
+    - navigation.footer
+    - search.highlight
+    - search.suggest
+
+hooks:
+  - scripts/cache_bust.py
+  - scripts/hooks.py
+
+plugins:
+  - header-dropdown:
+      dropdowns:
+        - title: Find data
+          links:
+            - text: Data Browser
+              url: /databrowser/
+            - text: STAC Browser
+              url: /stac-browser/
+
+        - title: Examples
+          links:
+            - text: Start here
+              url: /examples/
+            - text: A map of one month
+              url: /examples/01_first_map/
+            - text: The global mean is just a mean
+              url: /examples/02_global_mean/
+            - text: Cutting out a region
+              url: /examples/03_region_bbox/
+            - text: Zonal means come for free
+              url: /examples/04_zonal_mean/
+            - text: Meridional means, and why they are harder
+              url: /examples/05_meridional_mean/
+            - text: A Hovmöller diagram
+              url: /examples/06_hovmoeller/
+            - text: Moving up and down the pyramid
+              url: /examples/07_pyramid_levels/
+            - text: Comparing two datasets without regridding
+              url: /examples/08_cross_dataset/
+
+        - title: Notebook
+          links:
+            - text: Open the notebook
+              url: /notebook/lab/index.html
+
+        - title: Tips and tricks
+          links:
+            - text: High resolution data
+              url: /high-level-access/
+
+        - title: Concepts
+          links:
+            - text: HEALPix in Zarr on S3
+              url: /storage_concepts/
+            - text: Why HEALPix?
+              url: /storage_concepts/why-healpix/
+            - text: Why Zarr and S3?
+              url: /storage_concepts/zarr-and-s3/
+            - text: Remapping decisions
+              url: /technical-decisions/
+            - text: Remapping benchmark
+              url: /appendix-remapping-benchmark/
+
+  - search
+
+markdown_extensions:
+  - admonition
+  - footnotes
+  - pymdownx.details
+  - md_in_html
+
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+
+  - pymdownx.highlight:
+      anchor_linenums: true
+
+  - pymdownx.tasklist:
+      custom_checkbox: true
+
+  - pymdownx.emoji:
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
+
+  - pymdownx.arithmatex:
+      generic: true
+
+  - tables
+  - attr_list
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.blocks.caption
+
+  - toc:
+      permalink: true
+
+extra_css:
+  - assets/styles.css
+  - assets/showroom.css
+  - assets/stac-browser.css
+  - assets/databrowser.css
+
+extra_javascript:
+  - https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js
+  - assets/waterpark-chrome.js
+  - assets/header-navigation.js
+
+copyright: >
+  Need support? <a href="mailto:waterpark@support.dkrz.de">waterpark@support.dkrz.de</a>
+
+extra:
+  social:
+    - icon: material/email
+      link: mailto:waterpark@support.dkrz.de
+      name: Support - waterpark@support.dkrz.de
+
+nav:
+  - Overview: index.md
+
+  - Find data:
+      - Data Browser: databrowser.md
+      - STAC Browser: stac-browser.md
+
+  - Examples:
+      - Start here: examples/index.md
+      - A map of one month: examples/01_first_map.md
+      - The global mean is just a mean: examples/02_global_mean.md
+      - Cutting out a region: examples/03_region_bbox.md
+      - Zonal means come for free: examples/04_zonal_mean.md
+      - Meridional means, and why they are harder: examples/05_meridional_mean.md
+      - A Hovmöller diagram: examples/06_hovmoeller.md
+      - Moving up and down the pyramid: examples/07_pyramid_levels.md
+      - Comparing two datasets without regridding: examples/08_cross_dataset.md
+
+  - Tips and tricks:
+      - High resolution data: high-level-access.md
+
+  - Concepts:
+      - HEALPix in Zarr on S3: storage_concepts/index.md
+      - Why HEALPix?: storage_concepts/why-healpix.md
+      - Why Zarr and S3?: storage_concepts/zarr-and-s3.md
+      - Remapping decisions: technical-decisions.md
+      - Remapping benchmark: appendix-remapping-benchmark.md
+
+exclude_docs: |
+  overrides/**

@@ -5,8 +5,6 @@ on:
     branches: [main]
   pull_request:
   workflow_dispatch:
-  schedule:
-    - cron: "17 3 * * *"
 
 permissions:
   contents: read
@@ -15,36 +13,30 @@ concurrency:
   group: pages-${{ github.ref }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
-env:
-  NPM_CONFIG_AUDIT: "false"
-  NPM_CONFIG_FUND: "false"
-  PLAYWRIGHT_INSTALL_ARGS: "--with-deps"
-
 jobs:
   build:
     runs-on: ubuntu-latest
-    timeout-minutes: 45
-    permissions:
-      contents: read
-      pages: read
     steps:
       - uses: actions/checkout@v7
 
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: requirements-docs.txt
+
       - uses: actions/setup-node@v7
         with:
-          node-version: lts/*
+          node-version: "22"
+          cache: npm
 
       - uses: actions/cache@v6
         with:
           path: |
-            ~/.npm
-            ~/.cache/ms-playwright
-            .stac-materials
-            .python-materials
-          key: portal-${{ runner.os }}-${{ hashFiles('portal/portal.yaml') }}-${{ github.run_id }}
-          restore-keys: |
-            portal-${{ runner.os }}-${{ hashFiles('portal/portal.yaml') }}-
-            portal-${{ runner.os }}-
+            .prepared
+            .cache
+            .python-wheels
+          key: prepared-${{ hashFiles('package-lock.json', 'scripts/prepare.mjs', 'scripts/build_examples.py', 'web/**', 'examples/*.py', 'notebooks/**', 'assets/waterpark-datasets.json') }}
 
       - id: pages
         if: github.event_name != 'pull_request'
@@ -52,20 +44,22 @@ jobs:
 
       - name: Build
         env:
-          SITE_URL: ${{ steps.pages.outputs.base_url }}
+          SITE_URL: ${{ steps.pages.outputs.base_url || 'https://freva-org.github.io/showroom' }}
           GH_TOKEN: ${{ secrets.HEALPIX_GEO_TOKEN || github.token }}
-        run: ./scripts/dev-build.sh
+        run: |
+          pip install -r requirements-docs.txt
+          ./scripts/build.sh
 
       - if: github.event_name != 'pull_request'
         uses: actions/upload-pages-artifact@v5
         with:
-          path: build/portal
+          path: site
 
       - if: github.event_name == 'pull_request'
         uses: actions/upload-artifact@v7
         with:
-          name: waterpark-portal
-          path: build/portal
+          name: site
+          path: site
           retention-days: 7
 
   deploy:
